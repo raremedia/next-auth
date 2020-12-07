@@ -382,10 +382,6 @@ var _fetchData = function () {
 
 var _apiBaseUrl = req => {
   if (typeof window === 'undefined') {
-    if (!__NEXTAUTH.multiTenant && !process.env.NEXTAUTH_URL) {
-      _logger.default.warn('NEXTAUTH_URL', 'NEXTAUTH_URL environment variable not set');
-    }
-
     if (req && __NEXTAUTH.multiTenant) {
       var protocol = 'http';
 

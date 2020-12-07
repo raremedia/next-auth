@@ -109,8 +109,7 @@ var getToken = function () {
   var _ref3 = _asyncToGenerator(function* (args) {
     var {
       req,
-      secureCookie = !(!process.env.NEXTAUTH_URL || process.env.NEXTAUTH_URL.startsWith('http://')),
-      cookieName = secureCookie ? '__Secure-next-auth.session-token' : 'next-auth.session-token',
+      cookieName = 'next-auth.session-token',
       raw = false
     } = args;
     if (!req) throw new Error('Must pass `req` to JWT getToken()');

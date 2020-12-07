@@ -13,13 +13,6 @@ import callback from './routes/callback'
 import session from './routes/session'
 import pages from './pages'
 import adapters from '../adapters'
-import logger from '../lib/logger'
-
-// To work properly in production with OAuth providers the NEXTAUTH_URL
-// environment variable must be set.
-if (!process.env.NEXTAUTH_URL) {
-  logger.warn('NEXTAUTH_URL', 'NEXTAUTH_URL environment variable not set')
-}
 
 export default async (req, res, userSuppliedOptions) => {
   // To the best of my knowledge, we need to return a promise here
