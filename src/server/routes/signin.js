@@ -23,15 +23,11 @@ export default async (req, res, options, done) => {
   }
 
   const _baseUrl = function(){
-    if(process.env.MULTITENANT == "true"){
-      let protocol = 'http'
-      if( (req.headers.referer && req.headers.referer.split("://")[0] == 'https') || (req.headers['X-Forwarded-Proto'] && req.headers['X-Forwarded-Proto'] === 'https')){
-        protocol = 'https'
-      }
-      return protocol + "://" + req.headers.host + `${basePath}`
-    } else {
-      return `${baseUrl}${basePath}`
+    let protocol = 'http'
+    if( (req.headers.referer && req.headers.referer.split("://")[0] == 'https') || (req.headers['X-Forwarded-Proto'] && req.headers['X-Forwarded-Proto'] === 'https')){
+      protocol = 'https'
     }
+    return protocol + "://" + req.headers.host + `${basePath}`
   }
 
   // Adding to handle multi tenant solutions where the base url changes

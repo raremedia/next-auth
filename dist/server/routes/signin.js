@@ -40,17 +40,13 @@ var _default = function () {
     }
 
     var _baseUrl = function _baseUrl() {
-      if (process.env.MULTITENANT == "true") {
-        var protocol = 'http';
+      var protocol = 'http';
 
-        if (req.headers.referer && req.headers.referer.split("://")[0] == 'https' || req.headers['X-Forwarded-Proto'] && req.headers['X-Forwarded-Proto'] === 'https') {
-          protocol = 'https';
-        }
-
-        return protocol + "://" + req.headers.host + "".concat(basePath);
-      } else {
-        return "".concat(baseUrl).concat(basePath);
+      if (req.headers.referer && req.headers.referer.split("://")[0] == 'https' || req.headers['X-Forwarded-Proto'] && req.headers['X-Forwarded-Proto'] === 'https') {
+        protocol = 'https';
       }
+
+      return protocol + "://" + req.headers.host + "".concat(basePath);
     };
 
     if (type === 'oauth' && req.method === 'POST') {

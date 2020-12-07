@@ -72,18 +72,13 @@ var _default = function () {
         var {
           csrfToken: csrfTokenFromPost
         } = body;
-        var multiTenantURL = null;
+        var protocol = 'http';
 
-        if (process.env.MULTITENANT == "true") {
-          var protocol = 'http';
-
-          if (req.headers.referer && req.headers.referer.split("://")[0] == 'https' || req.headers['X-Forwarded-Proto'] && req.headers['X-Forwarded-Proto'] === 'https') {
-            protocol = 'https';
-          }
-
-          multiTenantURL = protocol + "://" + req.headers.host;
+        if (req.headers.referer && req.headers.referer.split("://")[0] == 'https' || req.headers['X-Forwarded-Proto'] && req.headers['X-Forwarded-Proto'] === 'https') {
+          protocol = 'https';
         }
 
+        var multiTenantURL = protocol + "://" + req.headers.host;
         var parsedUrl = (0, _parseUrl.default)(multiTenantURL || process.env.NEXTAUTH_URL || process.env.VERCEL_URL);
         var baseUrl = parsedUrl.baseUrl;
         var basePath = parsedUrl.basePath;
