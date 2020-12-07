@@ -7,7 +7,7 @@ exports.default = void 0;
 
 var _react = require("react");
 
-var _logger = _interopRequireDefault(require("../lib/logger"));
+var _logger2 = _interopRequireDefault(require("../lib/logger"));
 
 var _parseUrl = _interopRequireDefault(require("../lib/parse-url"));
 
@@ -261,7 +261,7 @@ var _useSessionHook = session => {
         setData(newClientSessionData);
         setLoading(false);
       } catch (error) {
-        _logger.default.error('CLIENT_USE_SESSION_ERROR', error);
+        _logger2.default.error('CLIENT_USE_SESSION_ERROR', error);
       }
     });
 
@@ -369,7 +369,7 @@ var _fetchData = function () {
       var data = yield res.json();
       return Promise.resolve(Object.keys(data).length > 0 ? data : null);
     } catch (error) {
-      _logger.default.error('CLIENT_FETCH_ERROR', url, error);
+      _logger2.default.error('CLIENT_FETCH_ERROR', url, error);
 
       return Promise.resolve(null);
     }
@@ -382,19 +382,23 @@ var _fetchData = function () {
 
 var _apiBaseUrl = req => {
   if (typeof window === 'undefined') {
-    if (req && __NEXTAUTH.multiTenant) {
-      
-      var protocol = 'https';
-      if (req.headers.host.includes('localhost')) {
-        protocol = 'http';
+    var _apiBaseUrl2 = req => {
+      if (typeof window === "undefined") {
+        if (req) {
+          var protocol = "https";
+
+          if (req.headers.host.includes("localhost")) {
+            protocol = "http";
+          }
+
+          return protocol + "://" + "".concat(req.headers.host).concat(__NEXTAUTH.basePath);
+        } else {
+          _logger.default.warn("can't get session without req defined");
+        }
+      } else {
+        return __NEXTAUTH.basePath;
       }
-      return protocol + "://" + "".concat(req.headers.host).concat(__NEXTAUTH.basePath);
-      
-    } else if (__NEXTAUTH.multiTenant) {
-      _logger.default.warn('found an instance of multitenant without a req');
-    } else {
-      return "".concat(__NEXTAUTH.baseUrl).concat(__NEXTAUTH.basePath);
-    }
+    };
   } else {
     return __NEXTAUTH.basePath;
   }

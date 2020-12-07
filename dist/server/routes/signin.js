@@ -41,9 +41,11 @@ var _default = function () {
 
     var _baseUrl = function _baseUrl() {
       var protocol = 'https';
+
       if (req.headers.host.includes('localhost')) {
         protocol = 'http';
       }
+
       return protocol + "://" + req.headers.host + "".concat(basePath);
     };
 

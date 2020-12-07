@@ -66,12 +66,12 @@ var _default = function () {
         var {
           csrfToken: csrfTokenFromPost
         } = body;
-
         var protocol = 'https';
+
         if (req.headers.host.includes('localhost')) {
           protocol = 'http';
         }
-  
+
         var multiTenantURL = protocol + "://" + req.headers.host;
         var parsedUrl = (0, _parseUrl.default)(multiTenantURL || process.env.NEXTAUTH_URL || process.env.VERCEL_URL);
         var baseUrl = parsedUrl.baseUrl;
