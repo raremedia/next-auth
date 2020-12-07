@@ -301,17 +301,12 @@ const _fetchData = async (url, options = {}) => {
 const _apiBaseUrl = (req) => {
   if (typeof window === 'undefined') {
     // Return absolute path when called server side
-    if(req && __NEXTAUTH.multiTenant){
-      let protocol = 'http'
-      if( (req.headers.referer && req.headers.referer.split("://")[0] == 'https') || (req.headers['X-Forwarded-Proto'] && req.headers['X-Forwarded-Proto'] === 'https')){
-        protocol = 'https'
-      }
-      return protocol + "://" +`${req.headers.host}${__NEXTAUTH.basePath}`
-    } else if(__NEXTAUTH.multiTenant){
-      logger.warn('found an instance of multitenant without a req')
-    } else {
-      return `${__NEXTAUTH.baseUrl}${__NEXTAUTH.basePath}`
+    var protocol = 'https';
+    if (req.headers.host.includes('localhost')) {
+      protocol = 'http';
     }
+    return protocol + "://" +`${req.headers.host}${__NEXTAUTH.basePath}`
+
   } else {
     // Return relative path when called client side
     return __NEXTAUTH.basePath

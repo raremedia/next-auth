@@ -383,13 +383,13 @@ var _fetchData = function () {
 var _apiBaseUrl = req => {
   if (typeof window === 'undefined') {
     if (req && __NEXTAUTH.multiTenant) {
-      var protocol = 'http';
-
-      if (req.headers.referer && req.headers.referer.split("://")[0] == 'https' || req.headers['X-Forwarded-Proto'] && req.headers['X-Forwarded-Proto'] === 'https') {
-        protocol = 'https';
+      
+      var protocol = 'https';
+      if (req.headers.host.includes('localhost')) {
+        protocol = 'http';
       }
-
       return protocol + "://" + "".concat(req.headers.host).concat(__NEXTAUTH.basePath);
+      
     } else if (__NEXTAUTH.multiTenant) {
       _logger.default.warn('found an instance of multitenant without a req');
     } else {

@@ -40,12 +40,10 @@ var _default = function () {
     }
 
     var _baseUrl = function _baseUrl() {
-      var protocol = 'http';
-
-      if (req.headers.referer && req.headers.referer.split("://")[0] == 'https' || req.headers['X-Forwarded-Proto'] && req.headers['X-Forwarded-Proto'] === 'https') {
-        protocol = 'https';
+      var protocol = 'https';
+      if (req.headers.host.includes('localhost')) {
+        protocol = 'http';
       }
-
       return protocol + "://" + req.headers.host + "".concat(basePath);
     };
 

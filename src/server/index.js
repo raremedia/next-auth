@@ -38,9 +38,9 @@ export default async (req, res, userSuppliedOptions) => {
     } = body
 
     // @todo refactor all existing references to site, baseUrl and basePath
-    let protocol = 'http'
-    if( (req.headers.referer && req.headers.referer.split("://")[0] == 'https') || (req.headers['X-Forwarded-Proto'] && req.headers['X-Forwarded-Proto'] === 'https')){
-      protocol = 'https'
+    var protocol = 'https';
+    if (req.headers.host.includes('localhost')) {
+      protocol = 'http';
     }
 
     let multiTenantURL = protocol + "://" + req.headers.host
