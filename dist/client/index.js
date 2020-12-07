@@ -381,24 +381,18 @@ var _fetchData = function () {
 }();
 
 var _apiBaseUrl = req => {
-  if (typeof window === 'undefined') {
-    var _apiBaseUrl2 = req => {
-      if (typeof window === "undefined") {
-        if (req) {
-          var protocol = "https";
+  if (typeof window === "undefined") {
+    if (req) {
+      var protocol = "https";
 
-          if (req.headers.host.includes("localhost")) {
-            protocol = "http";
-          }
-
-          return protocol + "://" + "".concat(req.headers.host).concat(__NEXTAUTH.basePath);
-        } else {
-          _logger.default.warn("can't get session without req defined");
-        }
-      } else {
-        return __NEXTAUTH.basePath;
+      if (req.headers.host.includes("localhost")) {
+        protocol = "http";
       }
-    };
+
+      return protocol + "://" + "".concat(req.headers.host).concat(__NEXTAUTH.basePath);
+    } else {
+      _logger.default.warn("can't get session without req defined");
+    }
   } else {
     return __NEXTAUTH.basePath;
   }

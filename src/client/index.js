@@ -299,28 +299,21 @@ const _fetchData = async (url, options = {}) => {
 }
 
 const _apiBaseUrl = (req) => {
-  if (typeof window === 'undefined') {
-    const _apiBaseUrl = (req) => {
-      if (typeof window === "undefined") {
-        if (req) {
-          // Return absolute path when called server side
-          var protocol = "https";
-          if (req.headers.host.includes("localhost")) {
-            protocol = "http";
-          }
-          return protocol + "://" + `${req.headers.host}${__NEXTAUTH.basePath}`;
-        } else {
-          _logger.default.warn("can't get session without req defined");
-        }
-      } else {
-        // Return relative path when called client side
-        return __NEXTAUTH.basePath;
+  if (typeof window === "undefined") {
+    if (req) {
+      // Return absolute path when called server side
+      var protocol = "https";
+      if (req.headers.host.includes("localhost")) {
+        protocol = "http";
       }
-    };    
+      return protocol + "://" + `${req.headers.host}${__NEXTAUTH.basePath}`;
+    } else {
+      _logger.default.warn("can't get session without req defined");
+    }
   } else {
     // Return relative path when called client side
-    return __NEXTAUTH.basePath
-  }
+    return __NEXTAUTH.basePath;
+  }  
 }
 
 const _encodedForm = (formData) => {
