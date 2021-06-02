@@ -11,21 +11,29 @@ var _atlassian = _interopRequireDefault(require("./atlassian"));
 
 var _auth = _interopRequireDefault(require("./auth0"));
 
+var _azureAdB2c = _interopRequireDefault(require("./azure-ad-b2c"));
+
 var _basecamp = _interopRequireDefault(require("./basecamp"));
 
 var _battlenet = _interopRequireDefault(require("./battlenet"));
 
 var _box = _interopRequireDefault(require("./box"));
 
-var _credentials = _interopRequireDefault(require("./credentials"));
+var _bungie = _interopRequireDefault(require("./bungie"));
 
 var _cognito = _interopRequireDefault(require("./cognito"));
+
+var _credentials = _interopRequireDefault(require("./credentials"));
 
 var _discord = _interopRequireDefault(require("./discord"));
 
 var _email = _interopRequireDefault(require("./email"));
 
+var _eveonline = _interopRequireDefault(require("./eveonline"));
+
 var _facebook = _interopRequireDefault(require("./facebook"));
+
+var _foursquare = _interopRequireDefault(require("./foursquare"));
 
 var _fusionauth = _interopRequireDefault(require("./fusionauth"));
 
@@ -37,48 +45,82 @@ var _google = _interopRequireDefault(require("./google"));
 
 var _identityServer = _interopRequireDefault(require("./identity-server4"));
 
+var _instagram = _interopRequireDefault(require("./instagram"));
+
+var _kakao = _interopRequireDefault(require("./kakao"));
+
+var _line = _interopRequireDefault(require("./line"));
+
 var _linkedin = _interopRequireDefault(require("./linkedin"));
 
-var _mixer = _interopRequireDefault(require("./mixer"));
+var _mailru = _interopRequireDefault(require("./mailru"));
+
+var _medium = _interopRequireDefault(require("./medium"));
+
+var _netlify = _interopRequireDefault(require("./netlify"));
 
 var _okta = _interopRequireDefault(require("./okta"));
+
+var _osso = _interopRequireDefault(require("./osso"));
+
+var _reddit = _interopRequireDefault(require("./reddit"));
+
+var _salesforce = _interopRequireDefault(require("./salesforce"));
 
 var _slack = _interopRequireDefault(require("./slack"));
 
 var _spotify = _interopRequireDefault(require("./spotify"));
 
+var _strava = _interopRequireDefault(require("./strava"));
+
 var _twitch = _interopRequireDefault(require("./twitch"));
 
 var _twitter = _interopRequireDefault(require("./twitter"));
+
+var _vk = _interopRequireDefault(require("./vk"));
 
 var _yandex = _interopRequireDefault(require("./yandex"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var _default = {
+  Apple: _apple.default,
   Atlassian: _atlassian.default,
   Auth0: _auth.default,
-  Apple: _apple.default,
+  AzureADB2C: _azureAdB2c.default,
   Basecamp: _basecamp.default,
   BattleNet: _battlenet.default,
   Box: _box.default,
-  Credentials: _credentials.default,
+  Bungie: _bungie.default,
   Cognito: _cognito.default,
+  Credentials: _credentials.default,
   Discord: _discord.default,
   Email: _email.default,
+  EVEOnline: _eveonline.default,
   Facebook: _facebook.default,
+  Foursquare: _foursquare.default,
   FusionAuth: _fusionauth.default,
   GitHub: _github.default,
   GitLab: _gitlab.default,
   Google: _google.default,
   IdentityServer4: _identityServer.default,
+  Instagram: _instagram.default,
+  Kakao: _kakao.default,
+  LINE: _line.default,
   LinkedIn: _linkedin.default,
-  Mixer: _mixer.default,
+  MailRu: _mailru.default,
+  Medium: _medium.default,
+  Netlify: _netlify.default,
   Okta: _okta.default,
+  Osso: _osso.default,
+  Reddit: _reddit.default,
+  Salesforce: _salesforce.default,
   Slack: _slack.default,
   Spotify: _spotify.default,
-  Twitter: _twitter.default,
+  Strava: _strava.default,
   Twitch: _twitch.default,
+  Twitter: _twitter.default,
+  VK: _vk.default,
   Yandex: _yandex.default
 };
 exports.default = _default;

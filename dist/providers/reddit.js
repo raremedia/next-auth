@@ -24,7 +24,14 @@ var _default = options => {
     accessTokenUrl: ' https://www.reddit.com/api/v1/access_token',
     authorizationUrl: 'https://www.reddit.com/api/v1/authorize?response_type=code',
     profileUrl: 'https://oauth.reddit.com/api/v1/me',
-    profile: _profile => {}
+    profile: _profile => {
+      return {
+        id: _profile.id,
+        name: _profile.name,
+        image: null,
+        email: null
+      };
+    }
   }, options);
 };
 

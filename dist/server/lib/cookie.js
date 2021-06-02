@@ -3,9 +3,10 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = void 0;
+exports.set = set;
+exports.defaultCookies = defaultCookies;
 
-var set = function set(res, name, value) {
+function set(res, name, value) {
   var options = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
   var stringValue = typeof value === 'object' ? 'j:' + JSON.stringify(value) : String(value);
 
@@ -22,7 +23,7 @@ var set = function set(res, name, value) {
 
   setCookieHeader.push(_serialize(name, String(stringValue), options));
   res.setHeader('Set-Cookie', setCookieHeader);
-};
+}
 
 function _serialize(name, val, options) {
   var fieldContentRegExp = /^[\u0009\u0020-\u007e\u0080-\u00ff]+$/;
@@ -122,7 +123,43 @@ function _serialize(name, val, options) {
   return str;
 }
 
-var _default = {
-  set
-};
-exports.default = _default;
+function defaultCookies(useSecureCookies) {
+  var cookiePrefix = useSecureCookies ? '__Secure-' : '';
+  return {
+    sessionToken: {
+      name: "".concat(cookiePrefix, "next-auth.session-token"),
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: useSecureCookies
+      }
+    },
+    callbackUrl: {
+      name: "".concat(cookiePrefix, "next-auth.callback-url"),
+      options: {
+        sameSite: 'lax',
+        path: '/',
+        secure: useSecureCookies
+      }
+    },
+    csrfToken: {
+      name: "".concat(useSecureCookies ? '__Host-' : '', "next-auth.csrf-token"),
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: useSecureCookies
+      }
+    },
+    pkceCodeVerifier: {
+      name: "".concat(cookiePrefix, "next-auth.pkce.code_verifier"),
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: useSecureCookies
+      }
+    }
+  };
+}

@@ -3,70 +3,47 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = void 0;
+exports.default = signin;
 
 var _preact = require("preact");
 
-var _preactRenderToString = _interopRequireDefault(require("preact-render-to-string"));
+function signin(_ref) {
+  var _errors$errorType;
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-var _default = (_ref) => {
   var {
-    req,
     csrfToken,
     providers,
-    callbackUrl
-  } = _ref;
-  var {
+    callbackUrl,
     email,
-    error
-  } = req.query;
+    error: errorType
+  } = _ref;
   var providersToRender = providers.filter(provider => {
     if (provider.type === 'oauth' || provider.type === 'email') {
       return true;
     } else if (provider.type === 'credentials' && provider.credentials) {
       return true;
-    } else {
-      return false;
     }
+
+    return false;
   });
-  var errorMessage;
-
-  if (error) {
-    switch (error) {
-      case 'Signin':
-      case 'OAuthSignin':
-      case 'OAuthCallback':
-      case 'OAuthCreateAccount':
-      case 'EmailCreateAccount':
-      case 'Callback':
-        errorMessage = (0, _preact.h)("p", null, "Try signing with a different account.");
-        break;
-
-      case 'OAuthAccountNotLinked':
-        errorMessage = (0, _preact.h)("p", null, "To confirm your identity, sign in with the same account you used originally.");
-        break;
-
-      case 'EmailSignin':
-        errorMessage = (0, _preact.h)("p", null, "Check your email address.");
-        break;
-
-      case 'CredentialsSignin':
-        errorMessage = (0, _preact.h)("p", null, "Sign in failed. Check the details you provided are correct.");
-        break;
-
-      default:
-        errorMessage = (0, _preact.h)("p", null, "Unable to sign in.");
-        break;
-    }
-  }
-
-  return (0, _preactRenderToString.default)((0, _preact.h)("div", {
+  var errors = {
+    Signin: 'Try signing with a different account.',
+    OAuthSignin: 'Try signing with a different account.',
+    OAuthCallback: 'Try signing with a different account.',
+    OAuthCreateAccount: 'Try signing with a different account.',
+    EmailCreateAccount: 'Try signing with a different account.',
+    Callback: 'Try signing with a different account.',
+    OAuthAccountNotLinked: 'To confirm your identity, sign in with the same account you used originally.',
+    EmailSignin: 'Check your email address.',
+    CredentialsSignin: 'Sign in failed. Check the details you provided are correct.',
+    default: 'Unable to sign in.'
+  };
+  var error = errorType && ((_errors$errorType = errors[errorType]) !== null && _errors$errorType !== void 0 ? _errors$errorType : errors.default);
+  return (0, _preact.h)("div", {
     className: "signin"
-  }, errorMessage && (0, _preact.h)("div", {
+  }, error && (0, _preact.h)("div", {
     className: "error"
-  }, errorMessage), providersToRender.map((provider, i) => (0, _preact.h)("div", {
+  }, (0, _preact.h)("p", null, error)), providersToRender.map((provider, i) => (0, _preact.h)("div", {
     key: provider.id,
     className: "provider"
   }, provider.type === 'oauth' && (0, _preact.h)("form", {
@@ -122,7 +99,5 @@ var _default = (_ref) => {
     }));
   }), (0, _preact.h)("button", {
     type: "submit"
-  }, "Sign in with ", provider.name)), (provider.type === 'email' || provider.type === 'credentials') && i + 1 < providersToRender.length && (0, _preact.h)("hr", null)))));
-};
-
-exports.default = _default;
+  }, "Sign in with ", provider.name)), (provider.type === 'email' || provider.type === 'credentials') && i + 1 < providersToRender.length && (0, _preact.h)("hr", null))));
+}

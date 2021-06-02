@@ -23,15 +23,14 @@ var _default = options => {
       client_id: options.clientId,
       client_secret: options.clientSecret
     },
-    accessTokenUrl: "https://".concat(options.domain, "/oauth2/v1/token"),
-    authorizationUrl: "https://".concat(options.domain, "/oauth2/v1/authorize/?response_type=code"),
-    profileUrl: "https://".concat(options.domain, "/oauth2/v1/userinfo/"),
+    accessTokenUrl: "https://".concat(options.domain, "/v1/token"),
+    authorizationUrl: "https://".concat(options.domain, "/v1/authorize/?response_type=code"),
+    profileUrl: "https://".concat(options.domain, "/v1/userinfo/"),
     profile: _profile => {
       return _objectSpread(_objectSpread({}, _profile), {}, {
         id: _profile.sub
       });
-    },
-    setGetAccessTokenAuthHeader: false
+    }
   }, options);
 };
 

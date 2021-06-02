@@ -3,15 +3,19 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = void 0;
+exports.default = signout;
 
-var _cookie = _interopRequireDefault(require("../lib/cookie"));
+var cookie = _interopRequireWildcard(require("../lib/cookie"));
 
 var _logger = _interopRequireDefault(require("../../lib/logger"));
 
 var _dispatchEvent = _interopRequireDefault(require("../lib/dispatch-event"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _getRequireWildcardCache() { if (typeof WeakMap !== "function") return null; var cache = new WeakMap(); _getRequireWildcardCache = function _getRequireWildcardCache() { return cache; }; return cache; }
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
 
 function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
 
@@ -23,17 +27,20 @@ function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try
 
 function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
 
-var _default = function () {
-  var _ref = _asyncToGenerator(function* (req, res, options, done) {
+function signout(_x, _x2) {
+  return _signout.apply(this, arguments);
+}
+
+function _signout() {
+  _signout = _asyncToGenerator(function* (req, res) {
     var {
       adapter,
       cookies,
       events,
       jwt,
-      callbackUrl,
-      redirect
-    } = options;
-    var useJwtSession = options.session.jwt;
+      callbackUrl
+    } = req.options;
+    var useJwtSession = req.options.session.jwt;
     var sessionToken = req.cookies[cookies.sessionToken.name];
 
     if (useJwtSession) {
@@ -47,7 +54,7 @@ var _default = function () {
       var {
         getSession,
         deleteSession
-      } = yield adapter.getAdapter(options);
+      } = yield adapter.getAdapter(req.options);
 
       try {
         var session = yield getSession(sessionToken);
@@ -61,16 +68,10 @@ var _default = function () {
       }
     }
 
-    _cookie.default.set(res, cookies.sessionToken.name, '', _objectSpread(_objectSpread({}, cookies.sessionToken.options), {}, {
+    cookie.set(res, cookies.sessionToken.name, '', _objectSpread(_objectSpread({}, cookies.sessionToken.options), {}, {
       maxAge: 0
     }));
-
-    return redirect(callbackUrl);
+    return res.redirect(callbackUrl);
   });
-
-  return function (_x, _x2, _x3, _x4) {
-    return _ref.apply(this, arguments);
-  };
-}();
-
-exports.default = _default;
+  return _signout.apply(this, arguments);
+}

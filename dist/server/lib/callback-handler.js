@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = void 0;
+exports.default = callbackHandler;
 
 var _errors = require("../../lib/errors");
 
@@ -21,169 +21,163 @@ function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try
 
 function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
 
-var _default = function () {
-  var _ref = _asyncToGenerator(function* (sessionToken, profile, providerAccount, options) {
-    try {
-      if (!profile) {
-        throw new Error('Missing profile');
+function callbackHandler(_x, _x2, _x3, _x4, _x5) {
+  return _callbackHandler.apply(this, arguments);
+}
+
+function _callbackHandler() {
+  _callbackHandler = _asyncToGenerator(function* (sessionToken, profile, providerAccount, options, req) {
+    if (!profile) throw new Error('Missing profile');
+    if (!(providerAccount !== null && providerAccount !== void 0 && providerAccount.id) || !providerAccount.type) throw new Error('Missing or invalid provider account');
+    if (!['email', 'oauth'].includes(providerAccount.type)) throw new Error('Provider not supported');
+    var {
+      adapter,
+      jwt,
+      events,
+      session: {
+        jwt: useJwtSession
       }
+    } = options;
 
-      if (!providerAccount || !providerAccount.id || !providerAccount.type) {
-        throw new Error('Missing or invalid provider account');
-      }
+    if (!adapter) {
+      return {
+        user: profile,
+        account: providerAccount,
+        session: {}
+      };
+    }
 
-      var {
-        adapter,
-        jwt,
-        events
-      } = options;
-      var useJwtSession = options.session.jwt;
+    var {
+      createUser,
+      updateUser,
+      getUser,
+      getUserByProviderAccountId,
+      getUserByEmail,
+      linkAccount,
+      createSession,
+      getSession,
+      deleteSession
+    } = yield adapter.getAdapter(options);
+    var session = null;
+    var user = null;
+    var isSignedIn = null;
+    var isNewUser = false;
 
-      if (!adapter) {
-        return {
-          user: profile,
-          account: providerAccount,
-          session: {}
-        };
-      }
+    if (sessionToken) {
+      var _session2;
 
-      var {
-        createUser,
-        updateUser,
-        getUser,
-        getUserByProviderAccountId,
-        getUserByEmail,
-        linkAccount,
-        createSession,
-        getSession,
-        deleteSession
-      } = yield adapter.getAdapter(options);
-      var session = null;
-      var user = null;
-      var isSignedIn = null;
-      var isNewUser = false;
+      if (useJwtSession) {
+        try {
+          var _session;
 
-      if (sessionToken) {
-        if (useJwtSession) {
-          try {
-            session = yield jwt.decode(_objectSpread(_objectSpread({}, jwt), {}, {
-              token: sessionToken
-            }));
+          session = yield jwt.decode(_objectSpread(_objectSpread({}, jwt), {}, {
+            token: sessionToken
+          }));
 
-            if (session && session.user) {
-              user = yield getUser(session.user.id);
-              isSignedIn = !!user;
-            }
-          } catch (e) {}
-        } else {
-          session = yield getSession(sessionToken);
-
-          if (session && session.userId) {
-            user = yield getUser(session.userId);
+          if ((_session = session) !== null && _session !== void 0 && _session.sub) {
+            user = yield getUser(session.sub);
             isSignedIn = !!user;
           }
-        }
+        } catch (_unused) {}
       }
 
-      if (providerAccount.type === 'email') {
-        var userByEmail = profile.email ? yield getUserByEmail(profile.email) : null;
+      session = yield getSession(sessionToken);
 
-        if (userByEmail) {
-          if (isSignedIn) {
-            if (user.id !== userByEmail.id && !useJwtSession) {
-              yield deleteSession(sessionToken);
-            }
+      if ((_session2 = session) !== null && _session2 !== void 0 && _session2.userId) {
+        user = yield getUser(session.userId);
+        isSignedIn = !!user;
+      }
+    }
+
+    if (providerAccount.type === 'email') {
+      var userByEmail = profile.email ? yield getUserByEmail(profile.email) : null;
+
+      if (userByEmail) {
+        if (isSignedIn) {
+          if (user.id !== userByEmail.id && !useJwtSession) {
+            yield deleteSession(sessionToken);
           }
-
-          var currentDate = new Date();
-          user = yield updateUser(_objectSpread(_objectSpread({}, userByEmail), {}, {
-            emailVerified: currentDate
-          }));
-          yield (0, _dispatchEvent.default)(events.updateUser, user);
-        } else {
-          var _currentDate = new Date();
-
-          user = yield createUser(_objectSpread(_objectSpread({}, profile), {}, {
-            emailVerified: _currentDate
-          }));
-          yield (0, _dispatchEvent.default)(events.createUser, user);
-          isNewUser = true;
         }
 
+        var currentDate = new Date();
+        user = yield updateUser(_objectSpread(_objectSpread({}, userByEmail), {}, {
+          emailVerified: currentDate
+        }));
+        yield (0, _dispatchEvent.default)(events.updateUser, user);
+      } else {
+        var _currentDate = new Date();
+
+        user = yield createUser(_objectSpread(_objectSpread({}, profile), {}, {
+          emailVerified: _currentDate
+        }));
+        yield (0, _dispatchEvent.default)(events.createUser, user, req);
+        isNewUser = true;
+      }
+
+      session = useJwtSession ? {} : yield createSession(user);
+      return {
+        session,
+        user,
+        isNewUser
+      };
+    } else if (providerAccount.type === 'oauth') {
+      var userByProviderAccountId = yield getUserByProviderAccountId(providerAccount.provider, providerAccount.id);
+
+      if (userByProviderAccountId) {
+        if (isSignedIn) {
+          if ("".concat(userByProviderAccountId.id) === "".concat(user.id)) {
+            return {
+              session,
+              user,
+              isNewUser
+            };
+          }
+
+          throw new _errors.AccountNotLinkedError();
+        }
+
+        session = useJwtSession ? {} : yield createSession(userByProviderAccountId);
+        return {
+          session,
+          user: userByProviderAccountId,
+          isNewUser
+        };
+      } else {
+        if (isSignedIn) {
+          yield linkAccount(user.id, providerAccount.provider, providerAccount.type, providerAccount.id, providerAccount.refreshToken, providerAccount.accessToken, providerAccount.accessTokenExpires);
+          yield (0, _dispatchEvent.default)(events.linkAccount, {
+            user,
+            providerAccount: providerAccount
+          });
+          return {
+            session,
+            user,
+            isNewUser
+          };
+        }
+
+        var _userByEmail = profile.email ? yield getUserByEmail(profile.email) : null;
+
+        if (_userByEmail) {
+          throw new _errors.AccountNotLinkedError();
+        }
+
+        user = yield createUser(profile);
+        yield (0, _dispatchEvent.default)(events.createUser, user);
+        yield linkAccount(user.id, providerAccount.provider, providerAccount.type, providerAccount.id, providerAccount.refreshToken, providerAccount.accessToken, providerAccount.accessTokenExpires);
+        yield (0, _dispatchEvent.default)(events.linkAccount, {
+          user,
+          providerAccount: providerAccount
+        });
         session = useJwtSession ? {} : yield createSession(user);
+        isNewUser = true;
         return {
           session,
           user,
           isNewUser
         };
-      } else if (providerAccount.type === 'oauth') {
-        var userByProviderAccountId = yield getUserByProviderAccountId(providerAccount.provider, providerAccount.id);
-
-        if (userByProviderAccountId) {
-          if (isSignedIn) {
-            if ("".concat(userByProviderAccountId.id) === "".concat(user.id)) {
-              return {
-                session,
-                user,
-                isNewUser
-              };
-            } else {
-              throw new _errors.AccountNotLinkedError();
-            }
-          } else {
-            session = useJwtSession ? {} : yield createSession(userByProviderAccountId);
-            return {
-              session,
-              user: userByProviderAccountId,
-              isNewUser
-            };
-          }
-        } else {
-          if (isSignedIn) {
-            yield linkAccount(user.id, providerAccount.provider, providerAccount.type, providerAccount.id, providerAccount.refreshToken, providerAccount.accessToken, providerAccount.accessTokenExpires);
-            yield (0, _dispatchEvent.default)(events.linkAccount, {
-              user,
-              providerAccount
-            });
-            return {
-              session,
-              user,
-              isNewUser
-            };
-          }
-
-          var _userByEmail = profile.email ? yield getUserByEmail(profile.email) : null;
-
-          if (_userByEmail) {
-            throw new _errors.AccountNotLinkedError();
-          } else {
-            user = yield createUser(profile);
-            yield (0, _dispatchEvent.default)(events.createUser, user);
-            yield linkAccount(user.id, providerAccount.provider, providerAccount.type, providerAccount.id, providerAccount.refreshToken, providerAccount.accessToken, providerAccount.accessTokenExpires);
-            yield (0, _dispatchEvent.default)(events.linkAccount, {
-              user,
-              providerAccount
-            });
-            session = useJwtSession ? {} : yield createSession(user);
-            isNewUser = true;
-            return {
-              session,
-              user,
-              isNewUser
-            };
-          }
-        }
-      } else {
-        return Promise.reject(new Error('Provider not supported'));
       }
-    } catch (error) {
-      return Promise.reject(error);
     }
   });
-
-  return function (_x, _x2, _x3, _x4) {
-    return _ref.apply(this, arguments);
-  };
-}();
-
-exports.default = _default;
+  return _callbackHandler.apply(this, arguments);
+}

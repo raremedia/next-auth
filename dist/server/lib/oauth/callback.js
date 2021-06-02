@@ -3,17 +3,15 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = void 0;
+exports.default = oAuthCallback;
 
-var _crypto = require("crypto");
-
-var _querystring = _interopRequireDefault(require("querystring"));
-
-var _jwtDecode = _interopRequireDefault(require("jwt-decode"));
+var _jsonwebtoken = require("jsonwebtoken");
 
 var _client = _interopRequireDefault(require("./client"));
 
 var _logger = _interopRequireDefault(require("../../../lib/logger"));
+
+var _errors = require("../../../lib/errors");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -27,25 +25,25 @@ function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try
 
 function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
 
-var _default = function () {
-  var _ref = _asyncToGenerator(function* (req, provider, csrfToken, callback) {
+function oAuthCallback(_x) {
+  return _oAuthCallback.apply(this, arguments);
+}
+
+function _oAuthCallback() {
+  _oAuthCallback = _asyncToGenerator(function* (req) {
+    var _provider$version;
+
     var {
-      oauth_token,
-      oauth_verifier,
-      code,
-      user,
-      state
-    } = req.query;
+      provider,
+      pkce
+    } = req.options;
     var client = (0, _client.default)(provider);
 
-    if (provider.version && provider.version.startsWith('2.')) {
-      if (!Object.prototype.hasOwnProperty.call(provider, 'state') || provider.state === true) {
-        var expectedState = (0, _crypto.createHash)('sha256').update(csrfToken).digest('hex');
-
-        if (state !== expectedState) {
-          return callback(new Error('Invalid state returned from oAuth provider'));
-        }
-      }
+    if ((_provider$version = provider.version) !== null && _provider$version !== void 0 && _provider$version.startsWith('2.')) {
+      var {
+        code,
+        user
+      } = req.query;
 
       if (req.method === 'POST') {
         try {
@@ -57,10 +55,10 @@ var _default = function () {
 
           code = body.code;
           user = body.user != null ? JSON.parse(body.user) : null;
-        } catch (e) {
-          _logger.default.error('OAUTH_CALLBACK_HANDLER_ERROR', e, req.body, provider.id, code);
+        } catch (error) {
+          _logger.default.error('OAUTH_CALLBACK_HANDLER_ERROR', error, req.body, provider.id, code);
 
-          return callback();
+          throw error;
         }
       }
 
@@ -70,106 +68,97 @@ var _default = function () {
         client.useAuthorizationHeaderforGET(true);
       }
 
-      client.getOAuthAccessToken = _getOAuthAccessToken;
-      yield client.getOAuthAccessToken(code, provider, (error, accessToken, refreshToken, results) => {
-        if (error || results.error) {
-          _logger.default.error('OAUTH_GET_ACCESS_TOKEN_ERROR', error, results, provider.id, code);
-
-          return callback(error || results.error);
-        }
+      try {
+        var tokens = yield client.getOAuthAccessToken(code, provider, pkce.code_verifier);
+        var profileData;
 
         if (provider.idToken) {
-          if (!results || !results.id_token) {
-            return callback();
+          if (!(tokens !== null && tokens !== void 0 && tokens.id_token)) {
+            throw new _errors.OAuthCallbackError('Missing JWT ID Token');
           }
 
-          _decodeToken(provider, accessToken, refreshToken, results.id_token, function () {
-            var _ref2 = _asyncToGenerator(function* (error, profileData) {
-              var {
-                profile,
-                account,
-                OAuthProfile
-              } = yield _getProfile(error, profileData, accessToken, refreshToken, provider, user);
-              callback(error, profile, account, OAuthProfile);
-            });
-
-            return function (_x5, _x6) {
-              return _ref2.apply(this, arguments);
-            };
-          }());
-        } else {
-          client.get = _get;
-          client.get(provider, accessToken, function () {
-            var _ref3 = _asyncToGenerator(function* (error, profileData) {
-              var {
-                profile,
-                account,
-                OAuthProfile
-              } = yield _getProfile(error, profileData, accessToken, refreshToken, provider);
-              callback(error, profile, account, OAuthProfile);
-            });
-
-            return function (_x7, _x8) {
-              return _ref3.apply(this, arguments);
-            };
-          }());
-        }
-      });
-    } else {
-      yield client.getOAuthAccessToken(oauth_token, null, oauth_verifier, (error, accessToken, refreshToken, results) => {
-        if (error || results.error) {
-          _logger.default.error('OAUTH_V1_GET_ACCESS_TOKEN_ERROR', error, results);
-        }
-
-        client.get(provider.profileUrl, accessToken, refreshToken, function () {
-          var _ref4 = _asyncToGenerator(function* (error, profileData) {
-            var {
-              profile,
-              account,
-              OAuthProfile
-            } = yield _getProfile(error, profileData, accessToken, refreshToken, provider);
-            callback(error, profile, account, OAuthProfile);
+          profileData = (0, _jsonwebtoken.decode)(tokens.id_token, {
+            json: true
           });
+        } else {
+          profileData = yield client.get(provider, tokens.accessToken, tokens);
+        }
 
-          return function (_x9, _x10) {
-            return _ref4.apply(this, arguments);
-          };
-        }());
-      });
+        return getProfile({
+          profileData,
+          provider,
+          tokens,
+          user
+        });
+      } catch (error) {
+        _logger.default.error('OAUTH_GET_ACCESS_TOKEN_ERROR', error, provider.id, code);
+
+        throw error;
+      }
     }
-  });
-
-  return function (_x, _x2, _x3, _x4) {
-    return _ref.apply(this, arguments);
-  };
-}();
-
-exports.default = _default;
-
-function _getProfile(_x11, _x12, _x13, _x14, _x15, _x16) {
-  return _getProfile2.apply(this, arguments);
-}
-
-function _getProfile2() {
-  _getProfile2 = _asyncToGenerator(function* (error, profileData, accessToken, refreshToken, provider, userData) {
-    if (error) {
-      _logger.default.error('OAUTH_GET_PROFILE_ERROR', error);
-    }
-
-    var profile = {};
 
     try {
+      var {
+        oauth_token: oauthToken,
+        oauth_verifier: oauthVerifier
+      } = req.query;
+
+      var _tokens = yield client.getOAuthAccessToken(oauthToken, null, oauthVerifier);
+
+      var _profileData = yield client.get(provider.profileUrl, _tokens.accessToken, _tokens.refreshToken);
+
+      return getProfile({
+        profileData: _profileData,
+        tokens: _tokens,
+        provider
+      });
+    } catch (error) {
+      _logger.default.error('OAUTH_V1_GET_ACCESS_TOKEN_ERROR', error);
+
+      throw error;
+    }
+  });
+  return _oAuthCallback.apply(this, arguments);
+}
+
+function getProfile(_x2) {
+  return _getProfile.apply(this, arguments);
+}
+
+function _getProfile() {
+  _getProfile = _asyncToGenerator(function* (_ref) {
+    var {
+      profileData,
+      tokens,
+      provider,
+      user
+    } = _ref;
+
+    try {
+      var _profile$email$toLowe, _profile$email;
+
       if (typeof profileData === 'string' || profileData instanceof String) {
         profileData = JSON.parse(profileData);
       }
 
-      if (userData != null) {
-        profileData.user = userData;
+      if (user != null) {
+        profileData.user = user;
       }
 
       _logger.default.debug('PROFILE_DATA', profileData);
 
-      profile = yield provider.profile(profileData);
+      var profile = yield provider.profile(profileData, tokens);
+      return {
+        profile: _objectSpread(_objectSpread({}, profile), {}, {
+          email: (_profile$email$toLowe = (_profile$email = profile.email) === null || _profile$email === void 0 ? void 0 : _profile$email.toLowerCase()) !== null && _profile$email$toLowe !== void 0 ? _profile$email$toLowe : null
+        }),
+        account: _objectSpread({
+          provider: provider.id,
+          type: provider.type,
+          id: profile.id
+        }, tokens),
+        OAuthProfile: profileData
+      };
     } catch (exception) {
       _logger.default.error('OAUTH_PARSE_PROFILE_ERROR', exception, profileData);
 
@@ -179,117 +168,6 @@ function _getProfile2() {
         OAuthProfile: profileData
       };
     }
-
-    return {
-      profile: {
-        name: profile.name,
-        email: profile.email ? profile.email.toLowerCase() : null,
-        image: profile.image
-      },
-      account: {
-        provider: provider.id,
-        type: provider.type,
-        id: profile.id,
-        refreshToken,
-        accessToken,
-        accessTokenExpires: null
-      },
-      OAuthProfile: profileData
-    };
   });
-  return _getProfile2.apply(this, arguments);
-}
-
-function _getOAuthAccessToken(_x17, _x18, _x19) {
-  return _getOAuthAccessToken2.apply(this, arguments);
-}
-
-function _getOAuthAccessToken2() {
-  _getOAuthAccessToken2 = _asyncToGenerator(function* (code, provider, callback) {
-    var url = provider.accessTokenUrl;
-    var setGetAccessTokenAuthHeader = provider.setGetAccessTokenAuthHeader !== null ? provider.setGetAccessTokenAuthHeader : true;
-    var params = _objectSpread({}, provider.params) || {};
-    var headers = _objectSpread({}, provider.headers) || {};
-    var codeParam = params.grant_type === 'refresh_token' ? 'refresh_token' : 'code';
-
-    if (!params[codeParam]) {
-      params[codeParam] = code;
-    }
-
-    if (!params.client_id) {
-      params.client_id = provider.clientId;
-    }
-
-    if (!params.client_secret) {
-      if (provider.clientSecretCallback) {
-        params.client_secret = yield provider.clientSecretCallback(provider.clientSecret);
-      } else {
-        params.client_secret = provider.clientSecret;
-      }
-    }
-
-    if (!params.redirect_uri) {
-      params.redirect_uri = provider.callbackUrl;
-    }
-
-    if (!headers['Content-Type']) {
-      headers['Content-Type'] = 'application/x-www-form-urlencoded';
-    }
-
-    if (!headers['Client-ID']) {
-      headers['Client-ID'] = provider.clientId;
-    }
-
-    if (setGetAccessTokenAuthHeader) {
-      if (!headers.Authorization) {
-        headers.Authorization = "Bearer ".concat(code);
-      }
-    }
-
-    var postData = _querystring.default.stringify(params);
-
-    this._request('POST', url, headers, postData, null, (error, data, response) => {
-      if (error) {
-        _logger.default.error('OAUTH_GET_ACCESS_TOKEN_ERROR', error, data, response);
-
-        return callback(error);
-      }
-
-      var results;
-
-      try {
-        results = JSON.parse(data);
-      } catch (e) {
-        results = _querystring.default.parse(data);
-      }
-
-      var accessToken = results.access_token;
-      var refreshToken = results.refresh_token;
-      callback(null, accessToken, refreshToken, results);
-    });
-  });
-  return _getOAuthAccessToken2.apply(this, arguments);
-}
-
-function _get(provider, accessToken, callback) {
-  var url = provider.profileUrl;
-  var headers = provider.headers || {};
-
-  if (this._useAuthorizationHeaderForGET) {
-    headers.Authorization = this.buildAuthHeader(accessToken);
-    headers['Client-ID'] = provider.clientId;
-    accessToken = null;
-  }
-
-  this._request('GET', url, headers, null, accessToken, callback);
-}
-
-function _decodeToken(provider, accessToken, refreshToken, idToken, callback) {
-  if (!idToken) {
-    throw new Error('Missing JWT ID Token', provider, idToken);
-  }
-
-  var decodedToken = (0, _jwtDecode.default)(idToken);
-  var profileData = JSON.stringify(decodedToken);
-  callback(null, profileData, accessToken, refreshToken, provider);
+  return _getProfile.apply(this, arguments);
 }

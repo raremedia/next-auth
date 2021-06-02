@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = void 0;
+exports.default = signin;
 
 var _oauth = _interopRequireDefault(require("../lib/signin/oauth"));
 
@@ -17,59 +17,72 @@ function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try
 
 function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
 
-var _default = function () {
-  var _ref = _asyncToGenerator(function* (req, res, options, done) {
+var _buildBaseUrl = function _buildBaseUrl(_ref) {
+  var {
+    baseUrl,
+    basePath,
+    req
+  } = _ref;
+
+  if (process.env.MULTI_TENANT == "true") {
+    var protocol = 'http';
+
+    if (req.headers.referer && req.headers.referer.split("://")[0] == 'https' || req.headers['x-forwarded-proto'] && req.headers['x-forwarded-proto'] === 'https') {
+      protocol = 'https';
+    }
+
+    return protocol + "://" + req.headers.host + "".concat(basePath);
+  } else {
+    return "".concat(baseUrl).concat(basePath);
+  }
+};
+
+function signin(_x, _x2) {
+  return _signin.apply(this, arguments);
+}
+
+function _signin() {
+  _signin = _asyncToGenerator(function* (req, res) {
     var {
-      provider: providerName,
-      providers,
+      provider,
       baseUrl,
       basePath,
       adapter,
-      callbacks,
-      csrfToken,
-      redirect
-    } = options;
-    var provider = providers[providerName];
-    var {
-      type
-    } = provider;
+      callbacks
+    } = req.options;
 
-    if (!type) {
-      res.status(500).end("Error: Type not specified for ".concat(provider));
-      return done();
+    var _baseUrl = _buildBaseUrl({
+      baseUrl,
+      basePath,
+      req
+    });
+
+    if (!provider.type) {
+      return res.status(500).end("Error: Type not specified for ".concat(provider.name));
     }
 
-    var _baseUrl = function _baseUrl() {
-      var protocol = 'https';
+    if (provider.type === 'oauth' && req.method === 'POST') {
+      try {
+        var authorizationUrl = yield (0, _oauth.default)(req);
+        return res.redirect(authorizationUrl);
+      } catch (error) {
+        _logger.default.error('SIGNIN_OAUTH_ERROR', error);
 
-      if (req.headers.host.includes('localhost')) {
-        protocol = 'http';
+        return res.redirect("".concat(_baseUrl, "/error?error=OAuthSignin"));
       }
+    } else if (provider.type === 'email' && req.method === 'POST') {
+      var _req$body$email$toLow, _req$body$email;
 
-      return protocol + "://" + req.headers.host + "".concat(basePath);
-    };
-
-    if (type === 'oauth' && req.method === 'POST') {
-      (0, _oauth.default)(provider, csrfToken, (error, oAuthSigninUrl) => {
-        if (error) {
-          _logger.default.error('SIGNIN_OAUTH_ERROR', error);
-
-          return redirect(_baseUrl() + "/error?error=OAuthSignin");
-        }
-
-        return redirect(oAuthSigninUrl);
-      });
-    } else if (type === 'email' && req.method === 'POST') {
       if (!adapter) {
         _logger.default.error('EMAIL_REQUIRES_ADAPTER_ERROR');
 
-        return redirect(_baseUrl() + "/error?error=Configuration");
+        return res.redirect("".concat(_baseUrl, "/error?error=Configuration"));
       }
 
       var {
         getUserByEmail
-      } = yield adapter.getAdapter(options);
-      var email = req.body.email ? req.body.email.toLowerCase() : null;
+      } = yield adapter.getAdapter(req.options);
+      var email = (_req$body$email$toLow = (_req$body$email = req.body.email) === null || _req$body$email === void 0 ? void 0 : _req$body$email.toLowerCase()) !== null && _req$body$email$toLow !== void 0 ? _req$body$email$toLow : null;
       var profile = (yield getUserByEmail(email)) || {
         email
       };
@@ -80,39 +93,38 @@ var _default = function () {
       };
 
       try {
-        var signinCallbackResponse = yield callbacks.signIn(profile, account, {
+        var signInCallbackResponse = yield callbacks.signIn(profile, account, {
           email,
           verificationRequest: true
         });
 
-        if (signinCallbackResponse === false) {
-          return redirect(_baseUrl() + "/error?error=AccessDenied");
+        if (signInCallbackResponse === false) {
+          return res.redirect("".concat(_baseUrl, "/error?error=AccessDenied"));
+        } else if (typeof signInCallbackResponse === 'string') {
+          return res.redirect(signInCallbackResponse);
         }
       } catch (error) {
         if (error instanceof Error) {
-          return redirect(_baseUrl() + "/error?error=".concat(encodeURIComponent(error)));
-        } else {
-          return redirect(error);
+          return res.redirect("".concat(_baseUrl, "/error?error=").concat(encodeURIComponent(error)));
         }
+
+        _logger.default.warn('SIGNIN_CALLBACK_REJECT_REDIRECT');
+
+        return res.redirect(error);
       }
 
       try {
-        yield (0, _email.default)(email, provider, options);
+        yield (0, _email.default)(email, provider, req.options);
       } catch (error) {
         _logger.default.error('SIGNIN_EMAIL_ERROR', error);
 
-        return redirect(_baseUrl() + "/error?error=EmailSignin");
+        return res.redirect("".concat(_baseUrl, "/error?error=EmailSignin"));
       }
 
-      return redirect(_baseUrl() + "/verify-request?provider=".concat(encodeURIComponent(provider.id), "&type=").concat(encodeURIComponent(provider.type)));
-    } else {
-      return redirect(_baseUrl() + "_baseUrl() + /signin");
+      return res.redirect("".concat(_baseUrl, "/verify-request?provider=").concat(encodeURIComponent(provider.id), "&type=").concat(encodeURIComponent(provider.type)));
     }
+
+    return res.redirect("".concat(_baseUrl, "/signin"));
   });
-
-  return function (_x, _x2, _x3, _x4) {
-    return _ref.apply(this, arguments);
-  };
-}();
-
-exports.default = _default;
+  return _signin.apply(this, arguments);
+}

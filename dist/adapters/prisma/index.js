@@ -9,10 +9,6 @@ var _crypto = require("crypto");
 
 var _errors = require("../../lib/errors");
 
-var _logger = _interopRequireDefault(require("../../lib/logger"));
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
 function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { Promise.resolve(value).then(_next, _throw); } }
 
 function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
@@ -44,12 +40,16 @@ var Adapter = config => {
 
   function _getAdapter() {
     _getAdapter = _asyncToGenerator(function* (appOptions) {
+      var {
+        logger
+      } = appOptions;
+
       function debug(debugCode) {
         for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
           args[_key - 1] = arguments[_key];
         }
 
-        _logger.default.debug("PRISMA_".concat(debugCode), ...args);
+        logger.debug("PRISMA_".concat(debugCode), ...args);
       }
 
       if (appOptions && (!appOptions.session || !appOptions.session.maxAge)) {
@@ -78,8 +78,7 @@ var Adapter = config => {
               }
             });
           } catch (error) {
-            _logger.default.error('CREATE_USER_ERROR', error);
-
+            logger.error('CREATE_USER_ERROR', error);
             return Promise.reject(new _errors.CreateUserError(error));
           }
         });
@@ -95,14 +94,13 @@ var Adapter = config => {
           debug('GET_USER', id);
 
           try {
-            return prisma[User].findOne({
+            return prisma[User].findUnique({
               where: {
                 id
               }
             });
           } catch (error) {
-            _logger.default.error('GET_USER_BY_ID_ERROR', error);
-
+            logger.error('GET_USER_BY_ID_ERROR', error);
             return Promise.reject(new Error('GET_USER_BY_ID_ERROR', error));
           }
         });
@@ -122,14 +120,13 @@ var Adapter = config => {
               return Promise.resolve(null);
             }
 
-            return prisma[User].findOne({
+            return prisma[User].findUnique({
               where: {
                 email
               }
             });
           } catch (error) {
-            _logger.default.error('GET_USER_BY_EMAIL_ERROR', error);
-
+            logger.error('GET_USER_BY_EMAIL_ERROR', error);
             return Promise.reject(new Error('GET_USER_BY_EMAIL_ERROR', error));
           }
         });
@@ -145,7 +142,7 @@ var Adapter = config => {
           debug('GET_USER_BY_PROVIDER_ACCOUNT_ID', providerId, providerAccountId);
 
           try {
-            var account = yield prisma[Account].findOne({
+            var account = yield prisma[Account].findUnique({
               where: {
                 compoundId: getCompoundId(providerId, providerAccountId)
               }
@@ -155,14 +152,13 @@ var Adapter = config => {
               return null;
             }
 
-            return prisma[User].findOne({
+            return prisma[User].findUnique({
               where: {
                 id: account.userId
               }
             });
           } catch (error) {
-            _logger.default.error('GET_USER_BY_PROVIDER_ACCOUNT_ID_ERROR', error);
-
+            logger.error('GET_USER_BY_PROVIDER_ACCOUNT_ID_ERROR', error);
             return Promise.reject(new Error('GET_USER_BY_PROVIDER_ACCOUNT_ID_ERROR', error));
           }
         });
@@ -197,8 +193,7 @@ var Adapter = config => {
               }
             });
           } catch (error) {
-            _logger.default.error('UPDATE_USER_ERROR', error);
-
+            logger.error('UPDATE_USER_ERROR', error);
             return Promise.reject(new Error('UPDATE_USER_ERROR', error));
           }
         });
@@ -220,8 +215,7 @@ var Adapter = config => {
               }
             });
           } catch (error) {
-            _logger.default.error('DELETE_USER_ERROR', error);
-
+            logger.error('DELETE_USER_ERROR', error);
             return Promise.reject(new Error('DELETE_USER_ERROR', error));
           }
         });
@@ -250,8 +244,7 @@ var Adapter = config => {
               }
             });
           } catch (error) {
-            _logger.default.error('LINK_ACCOUNT_ERROR', error);
-
+            logger.error('LINK_ACCOUNT_ERROR', error);
             return Promise.reject(new Error('LINK_ACCOUNT_ERROR', error));
           }
         });
@@ -273,8 +266,7 @@ var Adapter = config => {
               }
             });
           } catch (error) {
-            _logger.default.error('UNLINK_ACCOUNT_ERROR', error);
-
+            logger.error('UNLINK_ACCOUNT_ERROR', error);
             return Promise.reject(new Error('UNLINK_ACCOUNT_ERROR', error));
           }
         });
@@ -307,8 +299,7 @@ var Adapter = config => {
               }
             });
           } catch (error) {
-            _logger.default.error('CREATE_SESSION_ERROR', error);
-
+            logger.error('CREATE_SESSION_ERROR', error);
             return Promise.reject(new Error('CREATE_SESSION_ERROR', error));
           }
         });
@@ -324,7 +315,7 @@ var Adapter = config => {
           debug('GET_SESSION', sessionToken);
 
           try {
-            var session = yield prisma[Session].findOne({
+            var session = yield prisma[Session].findUnique({
               where: {
                 sessionToken
               }
@@ -341,8 +332,7 @@ var Adapter = config => {
 
             return session;
           } catch (error) {
-            _logger.default.error('GET_SESSION_ERROR', error);
-
+            logger.error('GET_SESSION_ERROR', error);
             return Promise.reject(new Error('GET_SESSION_ERROR', error));
           }
         });
@@ -385,12 +375,11 @@ var Adapter = config => {
                 id
               },
               data: {
-                expires
+                expires: expires.toISOString()
               }
             });
           } catch (error) {
-            _logger.default.error('UPDATE_SESSION_ERROR', error);
-
+            logger.error('UPDATE_SESSION_ERROR', error);
             return Promise.reject(new Error('UPDATE_SESSION_ERROR', error));
           }
         });
@@ -412,8 +401,7 @@ var Adapter = config => {
               }
             });
           } catch (error) {
-            _logger.default.error('DELETE_SESSION_ERROR', error);
-
+            logger.error('DELETE_SESSION_ERROR', error);
             return Promise.reject(new Error('DELETE_SESSION_ERROR', error));
           }
         });
@@ -461,8 +449,7 @@ var Adapter = config => {
             });
             return verificationRequest;
           } catch (error) {
-            _logger.default.error('CREATE_VERIFICATION_REQUEST_ERROR', error);
-
+            logger.error('CREATE_VERIFICATION_REQUEST_ERROR', error);
             return Promise.reject(new Error('CREATE_VERIFICATION_REQUEST_ERROR', error));
           }
         });
@@ -479,15 +466,17 @@ var Adapter = config => {
 
           try {
             var hashedToken = (0, _crypto.createHash)('sha256').update("".concat(token).concat(secret)).digest('hex');
-            var verificationRequest = yield prisma[VerificationRequest].findOne({
+            var verificationRequest = yield prisma[VerificationRequest].findFirst({
               where: {
+                identifier,
                 token: hashedToken
               }
             });
 
             if (verificationRequest && verificationRequest.expires && new Date() > verificationRequest.expires) {
-              yield prisma[VerificationRequest].delete({
+              yield prisma[VerificationRequest].deleteMany({
                 where: {
+                  identifier,
                   token: hashedToken
                 }
               });
@@ -496,8 +485,7 @@ var Adapter = config => {
 
             return verificationRequest;
           } catch (error) {
-            _logger.default.error('GET_VERIFICATION_REQUEST_ERROR', error);
-
+            logger.error('GET_VERIFICATION_REQUEST_ERROR', error);
             return Promise.reject(new Error('GET_VERIFICATION_REQUEST_ERROR', error));
           }
         });
@@ -514,14 +502,14 @@ var Adapter = config => {
 
           try {
             var hashedToken = (0, _crypto.createHash)('sha256').update("".concat(token).concat(secret)).digest('hex');
-            yield prisma[VerificationRequest].delete({
+            yield prisma[VerificationRequest].deleteMany({
               where: {
+                identifier,
                 token: hashedToken
               }
             });
           } catch (error) {
-            _logger.default.error('DELETE_VERIFICATION_REQUEST_ERROR', error);
-
+            logger.error('DELETE_VERIFICATION_REQUEST_ERROR', error);
             return Promise.reject(new Error('DELETE_VERIFICATION_REQUEST_ERROR', error));
           }
         });

@@ -3,37 +3,43 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = void 0;
+exports.default = NextAuth;
 
-var _crypto = require("crypto");
+var _adapters = _interopRequireDefault(require("../adapters"));
 
 var _jwt = _interopRequireDefault(require("../lib/jwt"));
 
 var _parseUrl = _interopRequireDefault(require("../lib/parse-url"));
 
-var _cookie = _interopRequireDefault(require("./lib/cookie"));
+var _logger = _interopRequireWildcard(require("../lib/logger"));
 
-var _callbackUrlHandler = _interopRequireDefault(require("./lib/callback-url-handler"));
+var cookie = _interopRequireWildcard(require("./lib/cookie"));
+
+var defaultEvents = _interopRequireWildcard(require("./lib/default-events"));
+
+var defaultCallbacks = _interopRequireWildcard(require("./lib/default-callbacks"));
 
 var _providers = _interopRequireDefault(require("./lib/providers"));
 
-var _events = _interopRequireDefault(require("./lib/events"));
+var _callbackUrlHandler = _interopRequireDefault(require("./lib/callback-url-handler"));
 
-var _callbacks = _interopRequireDefault(require("./lib/callbacks"));
+var _extendReq = _interopRequireDefault(require("./lib/extend-req"));
 
-var _providers2 = _interopRequireDefault(require("./routes/providers"));
-
-var _signin = _interopRequireDefault(require("./routes/signin"));
-
-var _signout = _interopRequireDefault(require("./routes/signout"));
-
-var _callback = _interopRequireDefault(require("./routes/callback"));
-
-var _session = _interopRequireDefault(require("./routes/session"));
+var routes = _interopRequireWildcard(require("./routes"));
 
 var _pages = _interopRequireDefault(require("./pages"));
 
-var _adapters = _interopRequireDefault(require("../adapters"));
+var _csrfTokenHandler = _interopRequireDefault(require("./lib/csrf-token-handler"));
+
+var _createSecret = _interopRequireDefault(require("./lib/create-secret"));
+
+var pkce = _interopRequireWildcard(require("./lib/oauth/pkce-handler"));
+
+var state = _interopRequireWildcard(require("./lib/oauth/state-handler"));
+
+function _getRequireWildcardCache() { if (typeof WeakMap !== "function") return null; var cache = new WeakMap(); _getRequireWildcardCache = function _getRequireWildcardCache() { return cache; }; return cache; }
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -47,141 +53,95 @@ function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try
 
 function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
 
-var _default = function () {
-  var _ref = _asyncToGenerator(function* (req, res, userSuppliedOptions) {
+if (!process.env.NEXTAUTH_URL) {
+  _logger.default.warn('NEXTAUTH_URL', 'NEXTAUTH_URL environment variable not set');
+}
+
+function NextAuthHandler(_x, _x2, _x3) {
+  return _NextAuthHandler.apply(this, arguments);
+}
+
+function _NextAuthHandler() {
+  _NextAuthHandler = _asyncToGenerator(function* (req, res, userOptions) {
+    if (userOptions.logger) {
+      (0, _logger.setLogger)(userOptions.logger);
+    }
+
+    if (userOptions.debug) {
+      process.env._NEXTAUTH_DEBUG = true;
+    }
+
     return new Promise(function () {
-      var _ref2 = _asyncToGenerator(function* (resolve) {
-        var done = resolve;
-        var {
-          url,
-          query,
-          body
-        } = req;
+      var _ref = _asyncToGenerator(function* (resolve) {
+        var _provider$version, _userOptions$adapter;
+
+        (0, _extendReq.default)(req, res, resolve);
+
+        if (!req.query.nextauth) {
+          var _error = 'Cannot find [...nextauth].js in pages/api/auth. Make sure the filename is written correctly.';
+
+          _logger.default.error('MISSING_NEXTAUTH_API_ROUTE_ERROR', _error);
+
+          return res.status(500).end("Error: ".concat(_error));
+        }
+
         var {
           nextauth,
           action = nextauth[0],
-          provider = nextauth[1],
+          providerId = nextauth[1],
           error = nextauth[1]
-        } = query;
+        } = req.query;
+        var multiTenantURL = null;
+
+        if (process.env.MULTI_TENANT == "true") {
+          var protocol = 'http';
+
+          if (req.headers.referer && req.headers.referer.split("://")[0] == 'https' || req.headers['x-forwarded-proto'] && req.headers['x-forwarded-proto'] === 'https') {
+            protocol = 'https';
+          }
+
+          multiTenantURL = protocol + "://" + req.headers.host;
+        }
+
         var {
-          csrfToken: csrfTokenFromPost
-        } = body;
-        var protocol = 'https';
+          basePath,
+          baseUrl
+        } = (0, _parseUrl.default)(multiTenantURL || process.env.NEXTAUTH_URL || process.env.VERCEL_URL);
 
-        if (req.headers.host.includes('localhost')) {
-          protocol = 'http';
-        }
+        var cookies = _objectSpread(_objectSpread({}, cookie.defaultCookies(userOptions.useSecureCookies || baseUrl.startsWith('https://'))), userOptions.cookies);
 
-        var multiTenantURL = protocol + "://" + req.headers.host;
-        var parsedUrl = (0, _parseUrl.default)(multiTenantURL || process.env.NEXTAUTH_URL || process.env.VERCEL_URL);
-        var baseUrl = parsedUrl.baseUrl;
-        var basePath = parsedUrl.basePath;
-        var adapter;
-
-        if (userSuppliedOptions.adapter) {
-          adapter = userSuppliedOptions.adapter;
-        } else if (userSuppliedOptions.database) {
-          adapter = _adapters.default.Default(userSuppliedOptions.database);
-        }
-
-        var secret = userSuppliedOptions.secret || (0, _crypto.createHash)('sha256').update(JSON.stringify(_objectSpread({
+        var secret = (0, _createSecret.default)({
+          userOptions,
+          basePath,
+          baseUrl
+        });
+        var {
+          csrfToken,
+          csrfTokenVerified
+        } = (0, _csrfTokenHandler.default)(req, res, cookies, secret);
+        var providers = (0, _providers.default)({
+          providers: userOptions.providers,
           baseUrl,
           basePath
-        }, userSuppliedOptions))).digest('hex');
-        var useSecureCookies = userSuppliedOptions.useSecureCookies || baseUrl.startsWith('https://');
-        var cookiePrefix = useSecureCookies ? '__Secure-' : '';
+        });
+        var provider = providers.find((_ref2) => {
+          var {
+            id
+          } = _ref2;
+          return id === providerId;
+        });
 
-        var cookies = _objectSpread({
-          sessionToken: {
-            name: "".concat(cookiePrefix, "next-auth.session-token"),
-            options: {
-              httpOnly: true,
-              sameSite: 'lax',
-              path: '/',
-              secure: useSecureCookies
-            }
-          },
-          callbackUrl: {
-            name: "".concat(cookiePrefix, "next-auth.callback-url"),
-            options: {
-              sameSite: 'lax',
-              path: '/',
-              secure: useSecureCookies
-            }
-          },
-          csrfToken: {
-            name: "".concat(useSecureCookies ? '__Host-' : '', "next-auth.csrf-token"),
-            options: {
-              httpOnly: true,
-              sameSite: 'lax',
-              path: '/',
-              secure: useSecureCookies
-            }
-          }
-        }, userSuppliedOptions.cookies);
-
-        var sessionOptions = _objectSpread({
-          jwt: false,
-          maxAge: 30 * 24 * 60 * 60,
-          updateAge: 24 * 60 * 60
-        }, userSuppliedOptions.session);
-
-        var jwtOptions = _objectSpread({
-          secret,
-          maxAge: sessionOptions.maxAge,
-          encode: _jwt.default.encode,
-          decode: _jwt.default.decode
-        }, userSuppliedOptions.jwt);
-
-        if (!adapter) {
-          sessionOptions.jwt = true;
+        if (provider && provider.type === 'oauth' && (_provider$version = provider.version) !== null && _provider$version !== void 0 && _provider$version.startsWith('2') && !provider.protection && provider.state !== false) {
+          provider.protection = 'state';
         }
 
-        var eventsOptions = _objectSpread(_objectSpread({}, _events.default), userSuppliedOptions.events);
-
-        var callbacksOptions = _objectSpread(_objectSpread({}, _callbacks.default), userSuppliedOptions.callbacks);
-
-        var csrfToken;
-        var csrfTokenVerified = false;
-
-        if (req.cookies[cookies.csrfToken.name]) {
-          var [csrfTokenValue, csrfTokenHash] = req.cookies[cookies.csrfToken.name].split('|');
-
-          if (csrfTokenHash === (0, _crypto.createHash)('sha256').update("".concat(csrfTokenValue).concat(secret)).digest('hex')) {
-            csrfToken = csrfTokenValue;
-
-            if (req.method === 'POST' && csrfToken === csrfTokenFromPost) {
-              csrfTokenVerified = true;
-            }
-          }
-        }
-
-        if (!csrfToken) {
-          csrfToken = (0, _crypto.randomBytes)(32).toString('hex');
-          var newCsrfTokenCookie = "".concat(csrfToken, "|").concat((0, _crypto.createHash)('sha256').update("".concat(csrfToken).concat(secret)).digest('hex'));
-
-          _cookie.default.set(res, cookies.csrfToken.name, newCsrfTokenCookie, cookies.csrfToken.options);
-        }
-
-        var redirect = redirectUrl => {
-          var reponseAsJson = !!(req.body && req.body.json === 'true');
-
-          if (reponseAsJson) {
-            res.json({
-              url: redirectUrl
-            });
-          } else {
-            res.status(302).setHeader('Location', redirectUrl);
-            res.end();
-          }
-
-          return done();
-        };
-
-        var options = _objectSpread(_objectSpread({
+        var maxAge = 30 * 24 * 60 * 60;
+        var adapter = (_userOptions$adapter = userOptions.adapter) !== null && _userOptions$adapter !== void 0 ? _userOptions$adapter : userOptions.database && _adapters.default.Default(userOptions.database);
+        req.options = _objectSpread(_objectSpread({
           debug: false,
-          pages: {}
-        }, userSuppliedOptions), {}, {
+          pages: {},
+          theme: 'auto'
+        }, userOptions), {}, {
           adapter,
           baseUrl,
           basePath,
@@ -190,164 +150,163 @@ var _default = function () {
           cookies,
           secret,
           csrfToken,
-          providers: (0, _providers.default)(userSuppliedOptions.providers, baseUrl, basePath),
-          session: sessionOptions,
-          jwt: jwtOptions,
-          events: eventsOptions,
-          callbacks: callbacksOptions,
-          callbackUrl: baseUrl,
-          redirect
+          providers,
+          session: _objectSpread({
+            jwt: !adapter,
+            maxAge,
+            updateAge: 24 * 60 * 60
+          }, userOptions.session),
+          jwt: _objectSpread({
+            secret,
+            maxAge,
+            encode: _jwt.default.encode,
+            decode: _jwt.default.decode
+          }, userOptions.jwt),
+          events: _objectSpread(_objectSpread({}, defaultEvents), userOptions.events),
+          callbacks: _objectSpread(_objectSpread({}, defaultCallbacks), userOptions.callbacks),
+          pkce: {},
+          logger: _logger.default
         });
-
-        if (options.debug === true) {
-          process.env._NEXTAUTH_DEBUG = true;
-        }
-
-        options.callbackUrl = yield (0, _callbackUrlHandler.default)(req, res, options);
+        yield (0, _callbackUrlHandler.default)(req, res);
+        var render = (0, _pages.default)(req, res);
+        var {
+          pages
+        } = req.options;
 
         if (req.method === 'GET') {
           switch (action) {
             case 'providers':
-              (0, _providers2.default)(req, res, options, done);
-              break;
+              return routes.providers(req, res);
 
             case 'session':
-              (0, _session.default)(req, res, options, done);
-              break;
+              return routes.session(req, res);
 
             case 'csrf':
-              res.json({
+              return res.json({
                 csrfToken
               });
-              return done();
 
             case 'signin':
-              if (options.pages.signIn) {
-                var redirectUrl = "".concat(options.pages.signIn).concat(options.pages.signIn.includes('?') ? '&' : '?', "callbackUrl=").concat(options.callbackUrl);
+              if (pages.signIn) {
+                var signinUrl = "".concat(pages.signIn).concat(pages.signIn.includes('?') ? '&' : '?', "callbackUrl=").concat(req.options.callbackUrl);
 
-                if (req.query.error) {
-                  redirectUrl = "".concat(redirectUrl, "&error=").concat(req.query.error);
+                if (error) {
+                  signinUrl = "".concat(signinUrl, "&error=").concat(error);
                 }
 
-                return redirect(redirectUrl);
+                return res.redirect(signinUrl);
               }
 
-              _pages.default.render(req, res, 'signin', {
-                baseUrl,
-                basePath,
-                providers: Object.values(options.providers),
-                callbackUrl: options.callbackUrl,
-                csrfToken
-              }, done);
-
-              break;
+              return render.signin();
 
             case 'signout':
-              if (options.pages.signOut) {
-                return redirect("".concat(options.pages.signOut).concat(options.pages.signOut.includes('?') ? '&' : '?', "error=").concat(error));
+              if (pages.signOut) {
+                return res.redirect("".concat(pages.signOut).concat(pages.signOut.includes('?') ? '&' : '?', "error=").concat(error));
               }
 
-              _pages.default.render(req, res, 'signout', {
-                baseUrl,
-                basePath,
-                csrfToken,
-                callbackUrl: options.callbackUrl
-              }, done);
-
-              break;
+              return render.signout();
 
             case 'callback':
-              if (provider && options.providers[provider]) {
-                (0, _callback.default)(req, res, options, done);
-              } else {
-                res.status(400).end("Error: HTTP GET is not supported for ".concat(url));
-                return done();
+              if (provider) {
+                if (yield pkce.handleCallback(req, res)) return;
+                if (yield state.handleCallback(req, res)) return;
+                return routes.callback(req, res);
               }
 
               break;
 
             case 'verify-request':
-              if (options.pages.verifyRequest) {
-                return redirect(options.pages.verifyRequest);
+              if (pages.verifyRequest) {
+                return res.redirect(pages.verifyRequest);
               }
 
-              _pages.default.render(req, res, 'verify-request', {
-                baseUrl
-              }, done);
-
-              break;
+              return render.verifyRequest();
 
             case 'error':
-              if (options.pages.error) {
-                return redirect("".concat(options.pages.error).concat(options.pages.error.includes('?') ? '&' : '?', "error=").concat(error));
+              if (pages.error) {
+                return res.redirect("".concat(pages.error).concat(pages.error.includes('?') ? '&' : '?', "error=").concat(error));
               }
 
-              _pages.default.render(req, res, 'error', {
-                baseUrl,
-                basePath,
-                error
-              }, done);
+              if (['Signin', 'OAuthSignin', 'OAuthCallback', 'OAuthCreateAccount', 'EmailCreateAccount', 'Callback', 'OAuthAccountNotLinked', 'EmailSignin', 'CredentialsSignin'].includes(error)) {
+                return res.redirect("".concat(baseUrl).concat(basePath, "/signin?error=").concat(error));
+              }
 
-              break;
+              return render.error({
+                error
+              });
 
             default:
-              res.status(404).end();
-              return done();
           }
         } else if (req.method === 'POST') {
           switch (action) {
             case 'signin':
-              if (!csrfTokenVerified) {
-                return redirect("".concat(baseUrl).concat(basePath, "/signin?csrf=true"));
+              if (csrfTokenVerified && provider) {
+                if (yield pkce.handleSignin(req, res)) return;
+                if (yield state.handleSignin(req, res)) return;
+                return routes.signin(req, res);
               }
 
-              if (provider && options.providers[provider]) {
-                (0, _signin.default)(req, res, options, done);
-              }
-
-              break;
+              return res.redirect("".concat(baseUrl).concat(basePath, "/signin?csrf=true"));
 
             case 'signout':
-              if (!csrfTokenVerified) {
-                return redirect("".concat(baseUrl).concat(basePath, "/signout?csrf=true"));
+              if (csrfTokenVerified) {
+                return routes.signout(req, res);
               }
 
-              (0, _signout.default)(req, res, options, done);
-              break;
+              return res.redirect("".concat(baseUrl).concat(basePath, "/signout?csrf=true"));
 
             case 'callback':
-              if (provider && options.providers[provider]) {
-                if (options.providers[provider].type === 'credentials' && !csrfTokenVerified) {
-                  return redirect("".concat(baseUrl).concat(basePath, "/signin?csrf=true"));
+              if (provider) {
+                if (provider.type === 'credentials' && !csrfTokenVerified) {
+                  return res.redirect("".concat(baseUrl).concat(basePath, "/signin?csrf=true"));
                 }
 
-                (0, _callback.default)(req, res, options, done);
-              } else {
-                res.status(400).end("Error: HTTP POST is not supported for ".concat(url));
-                return done();
+                if (yield pkce.handleCallback(req, res)) return;
+                if (yield state.handleCallback(req, res)) return;
+                return routes.callback(req, res);
               }
 
               break;
 
+            case '_log':
+              try {
+                if (!userOptions.logger) return;
+                var {
+                  code = 'CLIENT_ERROR',
+                  level = 'error',
+                  message = '[]'
+                } = req.body;
+
+                _logger.default[level](code, ...JSON.parse(message));
+              } catch (error) {
+                _logger.default.error('LOGGER_ERROR', error);
+              }
+
+              return res.end();
+
             default:
-              res.status(400).end("Error: HTTP POST is not supported for ".concat(url));
-              return done();
           }
-        } else {
-          res.status(400).end("Error: HTTP ".concat(req.method, " is not supported for ").concat(url));
-          return done();
         }
+
+        return res.status(400).end("Error: HTTP ".concat(req.method, " is not supported for ").concat(req.url));
       });
 
       return function (_x4) {
-        return _ref2.apply(this, arguments);
+        return _ref.apply(this, arguments);
       };
     }());
   });
+  return _NextAuthHandler.apply(this, arguments);
+}
 
-  return function (_x, _x2, _x3) {
-    return _ref.apply(this, arguments);
-  };
-}();
+function NextAuth() {
+  for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+    args[_key] = arguments[_key];
+  }
 
-exports.default = _default;
+  if (args.length === 1) {
+    return (req, res) => NextAuthHandler(req, res, args[0]);
+  }
+
+  return NextAuthHandler(...args);
+}

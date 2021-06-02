@@ -3,15 +3,19 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = void 0;
+exports.default = session;
 
-var _cookie = _interopRequireDefault(require("../lib/cookie"));
+var cookie = _interopRequireWildcard(require("../lib/cookie"));
 
 var _logger = _interopRequireDefault(require("../../lib/logger"));
 
 var _dispatchEvent = _interopRequireDefault(require("../lib/dispatch-event"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _getRequireWildcardCache() { if (typeof WeakMap !== "function") return null; var cache = new WeakMap(); _getRequireWildcardCache = function _getRequireWildcardCache() { return cache; }; return cache; }
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
 
 function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
 
@@ -23,23 +27,25 @@ function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try
 
 function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
 
-var _default = function () {
-  var _ref = _asyncToGenerator(function* (req, res, options, done) {
+function session(_x, _x2) {
+  return _session.apply(this, arguments);
+}
+
+function _session() {
+  _session = _asyncToGenerator(function* (req, res) {
     var {
       cookies,
       adapter,
       jwt,
       events,
       callbacks
-    } = options;
-    var useJwtSession = options.session.jwt;
-    var sessionMaxAge = options.session.maxAge;
+    } = req.options;
+    var useJwtSession = req.options.session.jwt;
+    var sessionMaxAge = req.options.session.maxAge;
     var sessionToken = req.cookies[cookies.sessionToken.name];
 
     if (!sessionToken) {
-      res.setHeader('Content-Type', 'application/json');
-      res.json({});
-      return done();
+      return res.json({});
     }
 
     var response = {};
@@ -66,11 +72,9 @@ var _default = function () {
         var newEncodedJwt = yield jwt.encode(_objectSpread(_objectSpread({}, jwt), {}, {
           token: jwtPayload
         }));
-
-        _cookie.default.set(res, cookies.sessionToken.name, newEncodedJwt, _objectSpread({
+        cookie.set(res, cookies.sessionToken.name, newEncodedJwt, _objectSpread({
           expires: sessionExpires
         }, cookies.sessionToken.options));
-
         yield (0, _dispatchEvent.default)(events.session, {
           session: sessionPayload,
           jwt: jwtPayload
@@ -78,7 +82,7 @@ var _default = function () {
       } catch (error) {
         _logger.default.error('JWT_SESSION_ERROR', error);
 
-        _cookie.default.set(res, cookies.sessionToken.name, '', _objectSpread(_objectSpread({}, cookies.sessionToken.options), {}, {
+        cookie.set(res, cookies.sessionToken.name, '', _objectSpread(_objectSpread({}, cookies.sessionToken.options), {}, {
           maxAge: 0
         }));
       }
@@ -88,35 +92,34 @@ var _default = function () {
           getUser,
           getSession,
           updateSession
-        } = yield adapter.getAdapter(options);
-        var session = yield getSession(sessionToken);
+        } = yield adapter.getAdapter(req.options);
 
-        if (session) {
-          yield updateSession(session);
-          var user = yield getUser(session.userId);
+        var _session2 = yield getSession(sessionToken);
+
+        if (_session2) {
+          yield updateSession(_session2);
+          var user = yield getUser(_session2.userId);
           var _defaultSessionPayload = {
             user: {
               name: user.name,
               email: user.email,
               image: user.image
             },
-            accessToken: session.accessToken,
-            expires: session.expires
+            accessToken: _session2.accessToken,
+            expires: _session2.expires
           };
 
           var _sessionPayload = yield callbacks.session(_defaultSessionPayload, user, req);
 
           response = _sessionPayload;
-
-          _cookie.default.set(res, cookies.sessionToken.name, sessionToken, _objectSpread({
-            expires: session.expires
+          cookie.set(res, cookies.sessionToken.name, sessionToken, _objectSpread({
+            expires: _session2.expires
           }, cookies.sessionToken.options));
-
           yield (0, _dispatchEvent.default)(events.session, {
             session: _sessionPayload
           });
         } else if (sessionToken) {
-          _cookie.default.set(res, cookies.sessionToken.name, '', _objectSpread(_objectSpread({}, cookies.sessionToken.options), {}, {
+          cookie.set(res, cookies.sessionToken.name, '', _objectSpread(_objectSpread({}, cookies.sessionToken.options), {}, {
             maxAge: 0
           }));
         }
@@ -125,14 +128,7 @@ var _default = function () {
       }
     }
 
-    res.setHeader('Content-Type', 'application/json');
     res.json(response);
-    return done();
   });
-
-  return function (_x, _x2, _x3, _x4) {
-    return _ref.apply(this, arguments);
-  };
-}();
-
-exports.default = _default;
+  return _session.apply(this, arguments);
+}

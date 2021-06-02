@@ -3,9 +3,9 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = void 0;
+exports.default = parseUrl;
 
-var _default = url => {
+function parseUrl(url) {
   var defaultHost = 'http://localhost:3000';
   var defaultPath = '/api/auth';
 
@@ -13,7 +13,7 @@ var _default = url => {
     url = "".concat(defaultHost).concat(defaultPath);
   }
 
-  var protocol = url.match(/^http?:\/\//) ? 'http' : 'https';
+  var protocol = url.startsWith('http:') ? 'http' : 'https';
   url = url.replace(/^https?:\/\//, '').replace(/\/$/, '');
   var [_host, ..._path] = url.split('/');
   var baseUrl = _host ? "".concat(protocol, "://").concat(_host) : defaultHost;
@@ -22,6 +22,4 @@ var _default = url => {
     baseUrl,
     basePath
   };
-};
-
-exports.default = _default;
+}

@@ -18,14 +18,16 @@ var Adapter = function Adapter(config) {
 
   function _getAdapter() {
     _getAdapter = _asyncToGenerator(function* (appOptions) {
-      function _debug() {
-        if (appOptions.debug) {
-          for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-            args[_key] = arguments[_key];
-          }
+      var {
+        logger
+      } = appOptions;
 
-          console.log('[next-auth][debug]', ...args);
+      function debug(debugCode) {
+        for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+          args[_key - 1] = arguments[_key];
         }
+
+        logger.debug("ADAPTER_".concat(debugCode), ...args);
       }
 
       function createUser(_x2) {
@@ -34,8 +36,7 @@ var Adapter = function Adapter(config) {
 
       function _createUser() {
         _createUser = _asyncToGenerator(function* (profile) {
-          _debug('createUser', profile);
-
+          debug('createUser', profile);
           return null;
         });
         return _createUser.apply(this, arguments);
@@ -47,8 +48,7 @@ var Adapter = function Adapter(config) {
 
       function _getUser() {
         _getUser = _asyncToGenerator(function* (id) {
-          _debug('getUser', id);
-
+          debug('getUser', id);
           return null;
         });
         return _getUser.apply(this, arguments);
@@ -60,8 +60,7 @@ var Adapter = function Adapter(config) {
 
       function _getUserByEmail() {
         _getUserByEmail = _asyncToGenerator(function* (email) {
-          _debug('getUserByEmail', email);
-
+          debug('getUserByEmail', email);
           return null;
         });
         return _getUserByEmail.apply(this, arguments);
@@ -73,8 +72,7 @@ var Adapter = function Adapter(config) {
 
       function _getUserByProviderAccountId() {
         _getUserByProviderAccountId = _asyncToGenerator(function* (providerId, providerAccountId) {
-          _debug('getUserByProviderAccountId', providerId, providerAccountId);
-
+          debug('getUserByProviderAccountId', providerId, providerAccountId);
           return null;
         });
         return _getUserByProviderAccountId.apply(this, arguments);
@@ -86,8 +84,7 @@ var Adapter = function Adapter(config) {
 
       function _updateUser() {
         _updateUser = _asyncToGenerator(function* (user) {
-          _debug('updateUser', user);
-
+          debug('updateUser', user);
           return null;
         });
         return _updateUser.apply(this, arguments);
@@ -99,8 +96,7 @@ var Adapter = function Adapter(config) {
 
       function _deleteUser() {
         _deleteUser = _asyncToGenerator(function* (userId) {
-          _debug('deleteUser', userId);
-
+          debug('deleteUser', userId);
           return null;
         });
         return _deleteUser.apply(this, arguments);
@@ -112,8 +108,7 @@ var Adapter = function Adapter(config) {
 
       function _linkAccount() {
         _linkAccount = _asyncToGenerator(function* (userId, providerId, providerType, providerAccountId, refreshToken, accessToken, accessTokenExpires) {
-          _debug('linkAccount', userId, providerId, providerType, providerAccountId, refreshToken, accessToken, accessTokenExpires);
-
+          debug('linkAccount', userId, providerId, providerType, providerAccountId, refreshToken, accessToken, accessTokenExpires);
           return null;
         });
         return _linkAccount.apply(this, arguments);
@@ -125,8 +120,7 @@ var Adapter = function Adapter(config) {
 
       function _unlinkAccount() {
         _unlinkAccount = _asyncToGenerator(function* (userId, providerId, providerAccountId) {
-          _debug('unlinkAccount', userId, providerId, providerAccountId);
-
+          debug('unlinkAccount', userId, providerId, providerAccountId);
           return null;
         });
         return _unlinkAccount.apply(this, arguments);
@@ -138,8 +132,7 @@ var Adapter = function Adapter(config) {
 
       function _createSession() {
         _createSession = _asyncToGenerator(function* (user) {
-          _debug('createSession', user);
-
+          debug('createSession', user);
           return null;
         });
         return _createSession.apply(this, arguments);
@@ -151,8 +144,7 @@ var Adapter = function Adapter(config) {
 
       function _getSession() {
         _getSession = _asyncToGenerator(function* (sessionToken) {
-          _debug('getSession', sessionToken);
-
+          debug('getSession', sessionToken);
           return null;
         });
         return _getSession.apply(this, arguments);
@@ -164,8 +156,7 @@ var Adapter = function Adapter(config) {
 
       function _updateSession() {
         _updateSession = _asyncToGenerator(function* (session, force) {
-          _debug('updateSession', session);
-
+          debug('updateSession', session);
           return null;
         });
         return _updateSession.apply(this, arguments);
@@ -177,8 +168,7 @@ var Adapter = function Adapter(config) {
 
       function _deleteSession() {
         _deleteSession = _asyncToGenerator(function* (sessionToken) {
-          _debug('deleteSession', sessionToken);
-
+          debug('deleteSession', sessionToken);
           return null;
         });
         return _deleteSession.apply(this, arguments);
@@ -190,8 +180,7 @@ var Adapter = function Adapter(config) {
 
       function _createVerificationRequest() {
         _createVerificationRequest = _asyncToGenerator(function* (identifier, url, token, secret, provider) {
-          _debug('createVerificationRequest', identifier);
-
+          debug('createVerificationRequest', identifier);
           return null;
         });
         return _createVerificationRequest.apply(this, arguments);
@@ -203,8 +192,7 @@ var Adapter = function Adapter(config) {
 
       function _getVerificationRequest() {
         _getVerificationRequest = _asyncToGenerator(function* (identifier, token, secret, provider) {
-          _debug('getVerificationRequest', identifier, token);
-
+          debug('getVerificationRequest', identifier, token);
           return null;
         });
         return _getVerificationRequest.apply(this, arguments);
@@ -216,8 +204,7 @@ var Adapter = function Adapter(config) {
 
       function _deleteVerificationRequest() {
         _deleteVerificationRequest = _asyncToGenerator(function* (identifier, token, secret, provider) {
-          _debug('deleteVerification', identifier, token);
-
+          debug('deleteVerification', identifier, token);
           return null;
         });
         return _deleteVerificationRequest.apply(this, arguments);

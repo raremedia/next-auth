@@ -25,10 +25,18 @@ var _default = options => {
     authorizationUrl: 'https://discord.com/api/oauth2/authorize?response_type=code&prompt=none',
     profileUrl: 'https://discord.com/api/users/@me',
     profile: _profile => {
+      if (_profile.avatar === null) {
+        var defaultAvatarNumber = parseInt(_profile.discriminator) % 5;
+        _profile.image_url = "https://cdn.discordapp.com/embed/avatars/".concat(defaultAvatarNumber, ".png");
+      } else {
+        var format = _profile.avatar.startsWith('a_') ? 'gif' : 'png';
+        _profile.image_url = "https://cdn.discordapp.com/avatars/".concat(_profile.id, "/").concat(_profile.avatar, ".").concat(format);
+      }
+
       return {
         id: _profile.id,
         name: _profile.username,
-        image: "https://cdn.discordapp.com/avatars/".concat(_profile.id, "/").concat(_profile.avatar, ".png"),
+        image: _profile.image_url,
         email: _profile.email
       };
     }

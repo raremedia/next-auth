@@ -19,8 +19,6 @@ var _transform = _interopRequireDefault(require("./lib/transform"));
 
 var _models = _interopRequireDefault(require("./models"));
 
-var _logger = _interopRequireDefault(require("../../lib/logger"));
-
 var _utils = require("./lib/utils");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -65,6 +63,18 @@ var Adapter = function Adapter(typeOrmConfig) {
 
   function _getAdapter() {
     _getAdapter = _asyncToGenerator(function* (appOptions) {
+      var {
+        logger
+      } = appOptions;
+
+      function debug(debugCode) {
+        for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+          args[_key - 1] = arguments[_key];
+        }
+
+        logger.debug("TYPEORM_".concat(debugCode), ...args);
+      }
+
       function _connect() {
         return _connect2.apply(this, arguments);
       }
@@ -87,7 +97,7 @@ var Adapter = function Adapter(typeOrmConfig) {
           if (error.name === 'AlreadyHasActiveConnectionError') {
             yield _connect();
           } else {
-            _logger.default.error('ADAPTER_CONNECTION_ERROR', error);
+            logger.error('ADAPTER_CONNECTION_ERROR', error);
           }
         }
       } else {
@@ -101,15 +111,6 @@ var Adapter = function Adapter(typeOrmConfig) {
       var {
         manager
       } = connection;
-
-      function debug(debugCode) {
-        for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-          args[_key - 1] = arguments[_key];
-        }
-
-        _logger.default.debug("TYPEORM_".concat(debugCode), ...args);
-      }
-
       var idKey = 'id';
       var ObjectId;
 
@@ -139,8 +140,7 @@ var Adapter = function Adapter(typeOrmConfig) {
             var user = new User(profile.name, profile.email, profile.image, profile.emailVerified);
             return yield manager.save(user);
           } catch (error) {
-            _logger.default.error('CREATE_USER_ERROR', error);
-
+            logger.error('CREATE_USER_ERROR', error);
             return Promise.reject(new _errors.CreateUserError(error));
           }
         });
@@ -164,8 +164,7 @@ var Adapter = function Adapter(typeOrmConfig) {
               [idKey]: id
             });
           } catch (error) {
-            _logger.default.error('GET_USER_BY_ID_ERROR', error);
-
+            logger.error('GET_USER_BY_ID_ERROR', error);
             return Promise.reject(new Error('GET_USER_BY_ID_ERROR', error));
           }
         });
@@ -189,8 +188,7 @@ var Adapter = function Adapter(typeOrmConfig) {
               email
             });
           } catch (error) {
-            _logger.default.error('GET_USER_BY_EMAIL_ERROR', error);
-
+            logger.error('GET_USER_BY_EMAIL_ERROR', error);
             return Promise.reject(new Error('GET_USER_BY_EMAIL_ERROR', error));
           }
         });
@@ -219,8 +217,7 @@ var Adapter = function Adapter(typeOrmConfig) {
               [idKey]: account.userId
             });
           } catch (error) {
-            _logger.default.error('GET_USER_BY_PROVIDER_ACCOUNT_ID_ERROR', error);
-
+            logger.error('GET_USER_BY_PROVIDER_ACCOUNT_ID_ERROR', error);
             return Promise.reject(new Error('GET_USER_BY_PROVIDER_ACCOUNT_ID_ERROR', error));
           }
         });
@@ -263,8 +260,7 @@ var Adapter = function Adapter(typeOrmConfig) {
             var account = new Account(userId, providerId, providerType, providerAccountId, refreshToken, accessToken, accessTokenExpires);
             return manager.save(account);
           } catch (error) {
-            _logger.default.error('LINK_ACCOUNT_ERROR', error);
-
+            logger.error('LINK_ACCOUNT_ERROR', error);
             return Promise.reject(new Error('LINK_ACCOUNT_ERROR', error));
           }
         });
@@ -303,8 +299,7 @@ var Adapter = function Adapter(typeOrmConfig) {
             var session = new Session(user.id, expires);
             return manager.save(session);
           } catch (error) {
-            _logger.default.error('CREATE_SESSION_ERROR', error);
-
+            logger.error('CREATE_SESSION_ERROR', error);
             return Promise.reject(new Error('CREATE_SESSION_ERROR', error));
           }
         });
@@ -330,8 +325,7 @@ var Adapter = function Adapter(typeOrmConfig) {
 
             return session;
           } catch (error) {
-            _logger.default.error('GET_SESSION_ERROR', error);
-
+            logger.error('GET_SESSION_ERROR', error);
             return Promise.reject(new Error('GET_SESSION_ERROR', error));
           }
         });
@@ -367,8 +361,7 @@ var Adapter = function Adapter(typeOrmConfig) {
 
             return manager.save(Session, session);
           } catch (error) {
-            _logger.default.error('UPDATE_SESSION_ERROR', error);
-
+            logger.error('UPDATE_SESSION_ERROR', error);
             return Promise.reject(new Error('UPDATE_SESSION_ERROR', error));
           }
         });
@@ -388,8 +381,7 @@ var Adapter = function Adapter(typeOrmConfig) {
               sessionToken
             });
           } catch (error) {
-            _logger.default.error('DELETE_SESSION_ERROR', error);
-
+            logger.error('DELETE_SESSION_ERROR', error);
             return Promise.reject(new Error('DELETE_SESSION_ERROR', error));
           }
         });
@@ -432,8 +424,7 @@ var Adapter = function Adapter(typeOrmConfig) {
             });
             return verificationRequest;
           } catch (error) {
-            _logger.default.error('CREATE_VERIFICATION_REQUEST_ERROR', error);
-
+            logger.error('CREATE_VERIFICATION_REQUEST_ERROR', error);
             return Promise.reject(new Error('CREATE_VERIFICATION_REQUEST_ERROR', error));
           }
         });
@@ -457,6 +448,7 @@ var Adapter = function Adapter(typeOrmConfig) {
 
             if (verificationRequest && verificationRequest.expires && new Date() > new Date(verificationRequest.expires)) {
               yield manager.delete(VerificationRequest, {
+                identifier,
                 token: hashedToken
               });
               return null;
@@ -464,8 +456,7 @@ var Adapter = function Adapter(typeOrmConfig) {
 
             return verificationRequest;
           } catch (error) {
-            _logger.default.error('GET_VERIFICATION_REQUEST_ERROR', error);
-
+            logger.error('GET_VERIFICATION_REQUEST_ERROR', error);
             return Promise.reject(new Error('GET_VERIFICATION_REQUEST_ERROR', error));
           }
         });
@@ -483,11 +474,11 @@ var Adapter = function Adapter(typeOrmConfig) {
           try {
             var hashedToken = (0, _crypto.createHash)('sha256').update("".concat(token).concat(secret)).digest('hex');
             yield manager.delete(VerificationRequest, {
+              identifier,
               token: hashedToken
             });
           } catch (error) {
-            _logger.default.error('DELETE_VERIFICATION_REQUEST_ERROR', error);
-
+            logger.error('DELETE_VERIFICATION_REQUEST_ERROR', error);
             return Promise.reject(new Error('DELETE_VERIFICATION_REQUEST_ERROR', error));
           }
         });

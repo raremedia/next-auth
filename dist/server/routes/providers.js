@@ -3,26 +3,28 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = void 0;
+exports.default = providers;
 
-var _default = (req, res, options, done) => {
+function providers(req, res) {
   var {
     providers
-  } = options;
-  var result = {};
-  Object.entries(providers).map((_ref) => {
-    var [provider, providerConfig] = _ref;
-    result[provider] = {
-      id: provider,
-      name: providerConfig.name,
-      type: providerConfig.type,
-      signinUrl: providerConfig.signinUrl,
-      callbackUrl: providerConfig.callbackUrl
+  } = req.options;
+  var result = providers.reduce((acc, _ref) => {
+    var {
+      id,
+      name,
+      type,
+      signinUrl,
+      callbackUrl
+    } = _ref;
+    acc[id] = {
+      id,
+      name,
+      type,
+      signinUrl,
+      callbackUrl
     };
-  });
-  res.setHeader('Content-Type', 'application/json');
+    return acc;
+  }, {});
   res.json(result);
-  return done();
-};
-
-exports.default = _default;
+}

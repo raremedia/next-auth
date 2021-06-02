@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = void 0;
+exports.default = dispatchEvent;
 
 var _logger = _interopRequireDefault(require("../../lib/logger"));
 
@@ -13,18 +13,17 @@ function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try
 
 function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
 
-var _default = function () {
-  var _ref = _asyncToGenerator(function* (event, message) {
+function dispatchEvent(_x, _x2, _x3) {
+  return _dispatchEvent.apply(this, arguments);
+}
+
+function _dispatchEvent() {
+  _dispatchEvent = _asyncToGenerator(function* (event, message, opts) {
     try {
-      yield event(message);
+      yield event(message, opts);
     } catch (e) {
       _logger.default.error('EVENT_ERROR', e);
     }
   });
-
-  return function (_x, _x2) {
-    return _ref.apply(this, arguments);
-  };
-}();
-
-exports.default = _default;
+  return _dispatchEvent.apply(this, arguments);
+}

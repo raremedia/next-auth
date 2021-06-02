@@ -25,11 +25,13 @@ var _default = options => {
     authorizationUrl: 'https://accounts.spotify.com/authorize?response_type=code',
     profileUrl: 'https://api.spotify.com/v1/me',
     profile: _profile => {
+      var _profile$images, _profile$images$;
+
       return {
         id: _profile.id,
         name: _profile.display_name,
         email: _profile.email,
-        image: _profile.images.length > 0 ? _profile.images[0].url : undefined
+        image: (_profile$images = _profile.images) === null || _profile$images === void 0 ? void 0 : (_profile$images$ = _profile$images[0]) === null || _profile$images$ === void 0 ? void 0 : _profile$images$.url
       };
     }
   }, options);

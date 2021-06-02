@@ -28,8 +28,7 @@ var _default = options => {
       return _objectSpread(_objectSpread({}, _profile), {}, {
         id: _profile.sub
       });
-    },
-    setGetAccessTokenAuthHeader: false
+    }
   }, options);
 };
 

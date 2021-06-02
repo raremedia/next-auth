@@ -3,18 +3,24 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = void 0;
+exports.default = callbackUrlHandler;
 
-var _cookie = _interopRequireDefault(require("../lib/cookie"));
+var cookie = _interopRequireWildcard(require("../lib/cookie"));
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+function _getRequireWildcardCache() { if (typeof WeakMap !== "function") return null; var cache = new WeakMap(); _getRequireWildcardCache = function _getRequireWildcardCache() { return cache; }; return cache; }
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
 
 function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { Promise.resolve(value).then(_next, _throw); } }
 
 function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
 
-var _default = function () {
-  var _ref = _asyncToGenerator(function* (req, res, options) {
+function callbackUrlHandler(_x, _x2) {
+  return _callbackUrlHandler.apply(this, arguments);
+}
+
+function _callbackUrlHandler() {
+  _callbackUrlHandler = _asyncToGenerator(function* (req, res) {
     var {
       query
     } = req;
@@ -26,7 +32,7 @@ var _default = function () {
       baseUrl,
       defaultCallbackUrl,
       callbacks
-    } = options;
+    } = req.options;
     var callbackUrl = defaultCallbackUrl || baseUrl;
     var callbackUrlParamValue = body.callbackUrl || query.callbackUrl || null;
     var callbackUrlCookieValue = req.cookies[cookies.callbackUrl.name] || null;
@@ -38,15 +44,10 @@ var _default = function () {
     }
 
     if (callbackUrl && callbackUrl !== callbackUrlCookieValue) {
-      _cookie.default.set(res, cookies.callbackUrl.name, callbackUrl, cookies.callbackUrl.options);
+      cookie.set(res, cookies.callbackUrl.name, callbackUrl, cookies.callbackUrl.options);
     }
 
-    return Promise.resolve(callbackUrl);
+    req.options.callbackUrl = callbackUrl;
   });
-
-  return function (_x, _x2, _x3) {
-    return _ref.apply(this, arguments);
-  };
-}();
-
-exports.default = _default;
+  return _callbackUrlHandler.apply(this, arguments);
+}

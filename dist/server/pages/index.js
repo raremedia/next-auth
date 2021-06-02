@@ -3,7 +3,9 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = void 0;
+exports.default = renderPage;
+
+var _preactRenderToString = _interopRequireDefault(require("preact-render-to-string"));
 
 var _signin = _interopRequireDefault(require("./signin"));
 
@@ -23,42 +25,67 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
-function render(req, res, page, props, done) {
-  var html = '';
+function renderPage(req, res) {
+  var {
+    baseUrl,
+    basePath,
+    callbackUrl,
+    csrfToken,
+    providers,
+    theme
+  } = req.options;
+  res.setHeader('Content-Type', 'text/html');
 
-  switch (page) {
-    case 'signin':
-      html = (0, _signin.default)(_objectSpread(_objectSpread({}, props), {}, {
-        req
-      }));
-      break;
-
-    case 'signout':
-      html = (0, _signout.default)(props);
-      break;
-
-    case 'verify-request':
-      html = (0, _verifyRequest.default)(props);
-      break;
-
-    case 'error':
-      html = (0, _error.default)(_objectSpread(_objectSpread({}, props), {}, {
-        res
-      }));
-      if (html === false) return done();
-      break;
-
-    default:
-      html = (0, _error.default)(props);
-      return;
+  function send(_ref) {
+    var {
+      html,
+      title
+    } = _ref;
+    res.send("<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><style>".concat((0, _css.default)(), "</style><title>").concat(title, "</title></head><body class=\"__next-auth-theme-").concat(theme, "\"><div class=\"page\">").concat((0, _preactRenderToString.default)(html), "</div></body></html>"));
   }
 
-  res.setHeader('Content-Type', 'text/html');
-  res.send("<!DOCTYPE html><head><style type=\"text/css\">".concat((0, _css.default)(), "</style><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"></head><body><div class=\"page\">").concat(html, "</div></body></html>"));
-  done();
-}
+  return {
+    signin(props) {
+      send({
+        html: (0, _signin.default)(_objectSpread(_objectSpread({
+          csrfToken,
+          providers,
+          callbackUrl
+        }, req.query), props)),
+        title: 'Sign In'
+      });
+    },
 
-var _default = {
-  render
-};
-exports.default = _default;
+    signout(props) {
+      send({
+        html: (0, _signout.default)(_objectSpread({
+          csrfToken,
+          baseUrl,
+          basePath
+        }, props)),
+        title: 'Sign Out'
+      });
+    },
+
+    verifyRequest(props) {
+      send({
+        html: (0, _verifyRequest.default)(_objectSpread({
+          baseUrl
+        }, props)),
+        title: 'Verify Request'
+      });
+    },
+
+    error(props) {
+      send({
+        html: (0, _error.default)(_objectSpread({
+          basePath,
+          baseUrl,
+          res
+        }, props)),
+        title: 'Error'
+      });
+    }
+
+  };
+}
